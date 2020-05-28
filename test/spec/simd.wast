@@ -167,6 +167,7 @@
  (func (export "i64x2.shr_u") (param $0 v128) (param $1 i32) (result v128) (i64x2.shr_u (local.get $0) (local.get $1)))
  (func (export "i64x2.add") (param $0 v128) (param $1 v128) (result v128) (i64x2.add (local.get $0) (local.get $1)))
  (func (export "i64x2.sub") (param $0 v128) (param $1 v128) (result v128) (i64x2.sub (local.get $0) (local.get $1)))
+ (func (export "i64x2.mul") (param $0 v128) (param $1 v128) (result v128) (i64x2.mul (local.get $0) (local.get $1)))
  (func (export "f32x4.abs") (param $0 v128) (result v128) (f32x4.abs (local.get $0)))
  (func (export "f32x4.neg") (param $0 v128) (result v128) (f32x4.neg (local.get $0)))
  (func (export "f32x4.sqrt") (param $0 v128) (result v128) (f32x4.sqrt (local.get $0)))
@@ -178,6 +179,8 @@
  (func (export "f32x4.div") (param $0 v128) (param $1 v128) (result v128) (f32x4.div (local.get $0) (local.get $1)))
  (func (export "f32x4.min") (param $0 v128) (param $1 v128) (result v128) (f32x4.min (local.get $0) (local.get $1)))
  (func (export "f32x4.max") (param $0 v128) (param $1 v128) (result v128) (f32x4.max (local.get $0) (local.get $1)))
+ (func (export "f32x4.pmin") (param $0 v128) (param $1 v128) (result v128) (f32x4.pmin (local.get $0) (local.get $1)))
+ (func (export "f32x4.pmax") (param $0 v128) (param $1 v128) (result v128) (f32x4.pmax (local.get $0) (local.get $1)))
  (func (export "f64x2.abs") (param $0 v128) (result v128) (f64x2.abs (local.get $0)))
  (func (export "f64x2.neg") (param $0 v128) (result v128) (f64x2.neg (local.get $0)))
  (func (export "f64x2.sqrt") (param $0 v128) (result v128) (f64x2.sqrt (local.get $0)))
@@ -189,6 +192,8 @@
  (func (export "f64x2.div") (param $0 v128) (param $1 v128) (result v128) (f64x2.div (local.get $0) (local.get $1)))
  (func (export "f64x2.min") (param $0 v128) (param $1 v128) (result v128) (f64x2.min (local.get $0) (local.get $1)))
  (func (export "f64x2.max") (param $0 v128) (param $1 v128) (result v128) (f64x2.max (local.get $0) (local.get $1)))
+ (func (export "f64x2.pmin") (param $0 v128) (param $1 v128) (result v128) (f64x2.pmin (local.get $0) (local.get $1)))
+ (func (export "f64x2.pmax") (param $0 v128) (param $1 v128) (result v128) (f64x2.pmax (local.get $0) (local.get $1)))
  (func (export "i32x4.trunc_sat_f32x4_s") (param $0 v128) (result v128) (i32x4.trunc_sat_f32x4_s (local.get $0)))
  (func (export "i32x4.trunc_sat_f32x4_u") (param $0 v128) (result v128) (i32x4.trunc_sat_f32x4_u (local.get $0)))
  (func (export "i64x2.trunc_sat_f64x2_s") (param $0 v128) (result v128) (i64x2.trunc_sat_f64x2_s (local.get $0)))
@@ -779,6 +784,7 @@
 (assert_return (invoke "i64x2.shr_u" (v128.const i64x2 1 0x8000000000000000) (i32.const 64)) (v128.const i64x2 1 0x8000000000000000))
 (assert_return (invoke "i64x2.add" (v128.const i64x2 0x8000000000000001 42) (v128.const i64x2 0x8000000000000001 0)) (v128.const i64x2 2 42))
 (assert_return (invoke "i64x2.sub" (v128.const i64x2 2 42) (v128.const i64x2 0x8000000000000001 0)) (v128.const i64x2 0x8000000000000001 42))
+(assert_return (invoke "i64x2.mul" (v128.const i64x2 2 42) (v128.const i64x2 0x8000000000000001 0)) (v128.const i64x2 2 0))
 
 ;; f32x4 arithmetic
 (assert_return (invoke "f32x4.abs" (v128.const f32x4 -0 nan -infinity 5)) (v128.const f32x4 0 nan infinity 5))
@@ -791,6 +797,8 @@
 (assert_return (invoke "f32x4.div" (v128.const f32x4 nan -nan infinity 42) (v128.const f32x4 42 infinity 2 2)) (v128.const f32x4 nan -nan infinity 21))
 (assert_return (invoke "f32x4.min" (v128.const f32x4 -0 0 nan 5) (v128.const f32x4 0 -0 5 nan)) (v128.const f32x4 -0 -0 nan nan))
 (assert_return (invoke "f32x4.max" (v128.const f32x4 -0 0 nan 5) (v128.const f32x4 0 -0 5 nan)) (v128.const f32x4 0 0 nan nan))
+(assert_return (invoke "f32x4.pmin" (v128.const f32x4 -0 0 nan 5) (v128.const f32x4 0 -0 5 nan)) (v128.const f32x4 -0 0 nan 5))
+(assert_return (invoke "f32x4.pmax" (v128.const f32x4 -0 0 nan 5) (v128.const f32x4 0 -0 5 nan)) (v128.const f32x4 -0 0 nan 5))
 
 ;; f64x2 arithmetic
 (assert_return (invoke "f64x2.abs" (v128.const f64x2 -0 nan)) (v128.const f64x2 0 nan))
@@ -812,6 +820,10 @@
 (assert_return (invoke "f64x2.min" (v128.const f64x2 nan 5) (v128.const f64x2 5 nan)) (v128.const f64x2 nan nan))
 (assert_return (invoke "f64x2.max" (v128.const f64x2 -0 0) (v128.const f64x2 0 -0)) (v128.const f64x2 0 0))
 (assert_return (invoke "f64x2.max" (v128.const f64x2 nan 5) (v128.const f64x2 5 nan)) (v128.const f64x2 nan nan))
+(assert_return (invoke "f64x2.pmin" (v128.const f64x2 -0 0) (v128.const f64x2 0 -0)) (v128.const f64x2 -0 0))
+(assert_return (invoke "f64x2.pmin" (v128.const f64x2 nan 5) (v128.const f64x2 5 nan)) (v128.const f64x2 nan 5))
+(assert_return (invoke "f64x2.pmax" (v128.const f64x2 -0 0) (v128.const f64x2 0 -0)) (v128.const f64x2 -0 0))
+(assert_return (invoke "f64x2.pmax" (v128.const f64x2 nan 5) (v128.const f64x2 5 nan)) (v128.const f64x2 nan 5))
 
 ;; conversions
 (assert_return (invoke "i32x4.trunc_sat_f32x4_s" (v128.const f32x4 42 nan infinity -infinity)) (v128.const i32x4 42 0 2147483647 -2147483648))

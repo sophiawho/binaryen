@@ -145,7 +145,6 @@ function test_ids() {
   console.log("ThrowId: " + binaryen.ThrowId);
   console.log("RethrowId: " + binaryen.RethrowId);
   console.log("BrOnExnId: " + binaryen.BrOnExnId);
-  console.log("PushId: " + binaryen.PushId);
   console.log("PopId: " + binaryen.PopId);
 }
 
@@ -383,18 +382,23 @@ function test_core() {
     module.i32x4.dot_i16x8_s(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.i64x2.add(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.i64x2.sub(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
+    module.i64x2.mul(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f32x4.add(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f32x4.sub(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f32x4.mul(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f32x4.div(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f32x4.min(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f32x4.max(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
+    module.f32x4.pmin(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
+    module.f32x4.pmax(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f64x2.add(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f64x2.sub(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f64x2.mul(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f64x2.div(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f64x2.min(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.f64x2.max(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
+    module.f64x2.pmin(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
+    module.f64x2.pmax(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.i8x16.narrow_i16x8_s(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.i8x16.narrow_i16x8_u(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
     module.i16x8.narrow_i32x4_s(module.v128.const(v128_bytes), module.v128.const(v128_bytes)),
@@ -543,16 +547,16 @@ function test_core() {
       ), 2
     ),
 
-    // Push and pop
-    module.push(module.i32.pop()),
-    module.push(module.i64.pop()),
-    module.push(module.f32.pop()),
-    module.push(module.f64.pop()),
-    module.push(module.v128.pop()),
-    module.push(module.anyref.pop()),
-    module.push(module.funcref.pop()),
-    module.push(module.nullref.pop()),
-    module.push(module.exnref.pop()),
+    // Pop
+    module.i32.pop(),
+    module.i64.pop(),
+    module.f32.pop(),
+    module.f64.pop(),
+    module.v128.pop(),
+    module.anyref.pop(),
+    module.funcref.pop(),
+    module.nullref.pop(),
+    module.exnref.pop(),
     // TODO: Host
     module.nop(),
     module.unreachable(),

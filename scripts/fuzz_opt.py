@@ -127,7 +127,7 @@ def randomize_fuzz_settings():
         NANS = True
     else:
         NANS = False
-        FUZZ_OPTS += ['--no-fuzz-nans']
+        FUZZ_OPTS += ['--denan']
     if random.random() < 0.5:
         OOB = True
     else:
@@ -806,7 +806,13 @@ if __name__ == '__main__':
                 print(arg)
             if given_seed is not None:
                 given_seed_passed = False
-            else:
+
+            # We want to generate a template reducer script only when there is
+            # no given wasm file. That we have a given wasm file means we are no
+            # longer working on the original test case but modified one, which
+            # is likely to be called within wasm-reduce script itself, so
+            # original.wasm and reduce.sh should not be overwritten.
+            if not given_wasm:
                 # show some useful info about filing a bug and reducing the
                 # testcase (to make reduction simple, save "original.wasm" on
                 # the side, so that we can autoreduce using the name "a.wasm"
@@ -818,11 +824,11 @@ if __name__ == '__main__':
                     reduce_sh.write('''\
 # check the input is even a valid wasm file
 %(wasm_opt)s --detect-features %(temp_wasm)s
-echo $?
+echo "should be 0:" $?
 
 # run the command
 ./scripts/fuzz_opt.py %(seed)d %(temp_wasm)s > o 2> e
-echo $?
+echo "should be 1:" $?
 
 #
 # You may want to print out part of "o" or "e", if the output matters and not
@@ -868,11 +874,23 @@ The initial wasm file used here is saved as %(original_wasm)s
 
 You can reduce the testcase by running this now:
 
+||||
+vvvv
+
 
 %(wasm_reduce)s %(original_wasm)s '--command=bash %(reduce_sh)s' -t %(temp_wasm)s -w %(working_wasm)s
 
 
-"%(reduce_sh)s" has been filled out for you, and includes docs and suggestions.
+^^^^
+||||
+
+Make sure to verify by eye that the output says
+
+should be 0: 0
+should be 1: 1
+
+You can also read "%(reduce_sh)s" which has been filled out for you and includes
+docs and suggestions.
 
 After reduction, the reduced file will be in %(working_wasm)s
 ================================================================================
@@ -884,13 +902,16 @@ After reduction, the reduced file will be in %(working_wasm)s
                        'reduce_sh': os.path.abspath('reduce.sh')})
                 break
         if given_seed is not None:
-            if given_seed_passed:
-                print('(finished running seed %d without error)' % given_seed)
-            else:
-                print('(finished running seed %d, see error above)' % given_seed)
-                sys.exit(1)
             break
 
         print('\nInvocations so far:')
         for testcase_handler in testcase_handlers:
             print('  ', testcase_handler.__class__.__name__ + ':', testcase_handler.count_runs())
+
+    if given_seed is not None:
+        if given_seed_passed:
+            print('(finished running seed %d without error)' % given_seed)
+            sys.exit(0)
+        else:
+            print('(finished running seed %d, see error above)' % given_seed)
+            sys.exit(1)

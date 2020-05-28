@@ -1147,6 +1147,12 @@ BinaryenFeatureAll: 1023
        )
       )
       (drop
+       (i64x2.mul
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+       )
+      )
+      (drop
        (f32x4.add
         (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
         (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
@@ -1213,6 +1219,18 @@ BinaryenFeatureAll: 1023
        )
       )
       (drop
+       (f32x4.pmin
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+       )
+      )
+      (drop
+       (f32x4.pmax
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+       )
+      )
+      (drop
        (f64x2.add
         (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
         (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
@@ -1244,6 +1262,18 @@ BinaryenFeatureAll: 1023
       )
       (drop
        (f64x2.max
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+       )
+      )
+      (drop
+       (f64x2.pmin
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+        (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
+       )
+      )
+      (drop
+       (f64x2.pmax
         (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
         (v128.const i32x4 0x04030201 0x08070605 0x0c0b0a09 0x100f0e0d)
        )
@@ -1691,8 +1721,10 @@ BinaryenFeatureAll: 1023
        )
       )
       (try
-       (throw $a-event
-        (i32.const 0)
+       (do
+        (throw $a-event
+         (i32.const 0)
+        )
        )
        (catch
         (local.set $5
@@ -1747,37 +1779,37 @@ BinaryenFeatureAll: 1023
         )
        )
       )
-      (push
+      (drop
        (i32.pop)
       )
-      (push
+      (drop
        (i64.pop)
       )
-      (push
+      (drop
        (f32.pop)
       )
-      (push
+      (drop
        (f64.pop)
       )
-      (push
+      (drop
        (funcref.pop)
       )
-      (push
+      (drop
        (anyref.pop)
       )
-      (push
+      (drop
        (nullref.pop)
       )
-      (push
+      (drop
        (exnref.pop)
       )
-      (push
+      (drop
        (funcref.pop)
       )
-      (push
+      (drop
        (nullref.pop)
       )
-      (push
+      (drop
        (exnref.pop)
       )
       (nop)

@@ -269,7 +269,6 @@ BinaryenExpressionId BinaryenTupleMakeId(void) {
 BinaryenExpressionId BinaryenTupleExtractId(void) {
   return Expression::Id::TupleExtractId;
 }
-BinaryenExpressionId BinaryenPushId(void) { return Expression::Id::PushId; }
 BinaryenExpressionId BinaryenPopId(void) { return Expression::Id::PopId; }
 
 // External kinds
@@ -670,6 +669,7 @@ BinaryenOp BinaryenShrSVecI64x2(void) { return ShrSVecI64x2; }
 BinaryenOp BinaryenShrUVecI64x2(void) { return ShrUVecI64x2; }
 BinaryenOp BinaryenAddVecI64x2(void) { return AddVecI64x2; }
 BinaryenOp BinaryenSubVecI64x2(void) { return SubVecI64x2; }
+BinaryenOp BinaryenMulVecI64x2(void) { return MulVecI64x2; }
 BinaryenOp BinaryenAbsVecF32x4(void) { return AbsVecF32x4; }
 BinaryenOp BinaryenNegVecF32x4(void) { return NegVecF32x4; }
 BinaryenOp BinaryenSqrtVecF32x4(void) { return SqrtVecF32x4; }
@@ -681,6 +681,8 @@ BinaryenOp BinaryenMulVecF32x4(void) { return MulVecF32x4; }
 BinaryenOp BinaryenDivVecF32x4(void) { return DivVecF32x4; }
 BinaryenOp BinaryenMinVecF32x4(void) { return MinVecF32x4; }
 BinaryenOp BinaryenMaxVecF32x4(void) { return MaxVecF32x4; }
+BinaryenOp BinaryenPMinVecF32x4(void) { return PMinVecF32x4; }
+BinaryenOp BinaryenPMaxVecF32x4(void) { return PMaxVecF32x4; }
 BinaryenOp BinaryenAbsVecF64x2(void) { return AbsVecF64x2; }
 BinaryenOp BinaryenNegVecF64x2(void) { return NegVecF64x2; }
 BinaryenOp BinaryenSqrtVecF64x2(void) { return SqrtVecF64x2; }
@@ -692,6 +694,8 @@ BinaryenOp BinaryenMulVecF64x2(void) { return MulVecF64x2; }
 BinaryenOp BinaryenDivVecF64x2(void) { return DivVecF64x2; }
 BinaryenOp BinaryenMinVecF64x2(void) { return MinVecF64x2; }
 BinaryenOp BinaryenMaxVecF64x2(void) { return MaxVecF64x2; }
+BinaryenOp BinaryenPMinVecF64x2(void) { return PMinVecF64x2; }
+BinaryenOp BinaryenPMaxVecF64x2(void) { return PMaxVecF64x2; }
 BinaryenOp BinaryenTruncSatSVecF32x4ToVecI32x4(void) {
   return TruncSatSVecF32x4ToVecI32x4;
 }
@@ -1244,11 +1248,6 @@ BinaryenExpressionRef BinaryenTupleExtract(BinaryenModuleRef module,
     Builder(*(Module*)module).makeTupleExtract((Expression*)tuple, index));
 }
 
-BinaryenExpressionRef BinaryenPush(BinaryenModuleRef module,
-                                   BinaryenExpressionRef value) {
-  return static_cast<Expression*>(
-    Builder(*(Module*)module).makePush((Expression*)value));
-}
 BinaryenExpressionRef BinaryenPop(BinaryenModuleRef module, BinaryenType type) {
   return static_cast<Expression*>(
     Builder(*(Module*)module).makePop(Type(type)));
@@ -1317,6 +1316,11 @@ BinaryenType BinaryenExpressionGetType(BinaryenExpressionRef expr) {
 void BinaryenExpressionPrint(BinaryenExpressionRef expr) {
   WasmPrinter::printExpression((Expression*)expr, std::cout);
   std::cout << '\n';
+}
+
+BinaryenExpressionRef BinaryenExpressionCopy(BinaryenExpressionRef expr,
+                                             BinaryenModuleRef module) {
+  return ExpressionManipulator::copy(expr, *(Module*)module);
 }
 
 // Specific expression utility
@@ -2022,12 +2026,6 @@ BinaryenIndex BinaryenTupleExtractGetIndex(BinaryenExpressionRef expr) {
   auto* expression = (Expression*)expr;
   assert(expression->is<TupleExtract>());
   return static_cast<TupleExtract*>(expression)->index;
-}
-// Push
-BinaryenExpressionRef BinaryenPushGetValue(BinaryenExpressionRef expr) {
-  auto* expression = (Expression*)expr;
-  assert(expression->is<Push>());
-  return static_cast<Push*>(expression)->value;
 }
 
 // Functions

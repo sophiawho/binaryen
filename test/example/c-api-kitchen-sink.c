@@ -305,7 +305,9 @@ void test_core() {
   // Exception handling
 
   // (try
-  //   (throw $a-event (i32.const 0))
+  //   (do
+  //     (throw $a-event (i32.const 0))
+  //   )
   //   (catch
   //     ;; We don't support multi-value yet. Use locals instead.
   //     (local.set 0 (exnref.pop))
@@ -548,6 +550,7 @@ void test_core() {
     makeBinary(module, BinaryenMulVecI32x4(), v128),
     makeBinary(module, BinaryenAddVecI64x2(), v128),
     makeBinary(module, BinaryenSubVecI64x2(), v128),
+    makeBinary(module, BinaryenMulVecI64x2(), v128),
     makeBinary(module, BinaryenAddVecF32x4(), v128),
     makeBinary(module, BinaryenSubVecF32x4(), v128),
     makeBinary(module, BinaryenMulVecF32x4(), v128),
@@ -559,12 +562,16 @@ void test_core() {
     makeBinary(module, BinaryenDivVecF32x4(), v128),
     makeBinary(module, BinaryenMinVecF32x4(), v128),
     makeBinary(module, BinaryenMaxVecF32x4(), v128),
+    makeBinary(module, BinaryenPMinVecF32x4(), v128),
+    makeBinary(module, BinaryenPMaxVecF32x4(), v128),
     makeBinary(module, BinaryenAddVecF64x2(), v128),
     makeBinary(module, BinaryenSubVecF64x2(), v128),
     makeBinary(module, BinaryenMulVecF64x2(), v128),
     makeBinary(module, BinaryenDivVecF64x2(), v128),
     makeBinary(module, BinaryenMinVecF64x2(), v128),
     makeBinary(module, BinaryenMaxVecF64x2(), v128),
+    makeBinary(module, BinaryenPMinVecF64x2(), v128),
+    makeBinary(module, BinaryenPMaxVecF64x2(), v128),
     makeBinary(module, BinaryenNarrowSVecI16x8ToVecI8x16(), v128),
     makeBinary(module, BinaryenNarrowUVecI16x8ToVecI8x16(), v128),
     makeBinary(module, BinaryenNarrowSVecI32x4ToVecI16x8(), v128),
@@ -726,18 +733,18 @@ void test_core() {
     BinaryenTupleMake(module, tupleElements4a, 4),
     BinaryenTupleExtract(
       module, BinaryenTupleMake(module, tupleElements4b, 4), 2),
-    // Push and pop
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeInt32())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeInt64())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeFloat32())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeFloat64())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeFuncref())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeAnyref())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeNullref())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeExnref())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeFuncref())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeNullref())),
-    BinaryenPush(module, BinaryenPop(module, BinaryenTypeExnref())),
+    // Pop
+    BinaryenPop(module, BinaryenTypeInt32()),
+    BinaryenPop(module, BinaryenTypeInt64()),
+    BinaryenPop(module, BinaryenTypeFloat32()),
+    BinaryenPop(module, BinaryenTypeFloat64()),
+    BinaryenPop(module, BinaryenTypeFuncref()),
+    BinaryenPop(module, BinaryenTypeAnyref()),
+    BinaryenPop(module, BinaryenTypeNullref()),
+    BinaryenPop(module, BinaryenTypeExnref()),
+    BinaryenPop(module, BinaryenTypeFuncref()),
+    BinaryenPop(module, BinaryenTypeNullref()),
+    BinaryenPop(module, BinaryenTypeExnref()),
 
     // TODO: Host
     BinaryenNop(module),

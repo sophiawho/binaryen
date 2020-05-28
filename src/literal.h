@@ -271,6 +271,8 @@ public:
 
   Literal min(const Literal& other) const;
   Literal max(const Literal& other) const;
+  Literal pmin(const Literal& other) const;
+  Literal pmax(const Literal& other) const;
   Literal copysign(const Literal& other) const;
 
   std::array<Literal, 16> getLanesSI8x16() const;
@@ -415,6 +417,7 @@ public:
   Literal shrUI64x2(const Literal& other) const;
   Literal addI64x2(const Literal& other) const;
   Literal subI64x2(const Literal& other) const;
+  Literal mulI64x2(const Literal& other) const;
   Literal absF32x4() const;
   Literal negF32x4() const;
   Literal sqrtF32x4() const;
@@ -424,6 +427,8 @@ public:
   Literal divF32x4(const Literal& other) const;
   Literal minF32x4(const Literal& other) const;
   Literal maxF32x4(const Literal& other) const;
+  Literal pminF32x4(const Literal& other) const;
+  Literal pmaxF32x4(const Literal& other) const;
   Literal absF64x2() const;
   Literal negF64x2() const;
   Literal sqrtF64x2() const;
@@ -433,6 +438,8 @@ public:
   Literal divF64x2(const Literal& other) const;
   Literal minF64x2(const Literal& other) const;
   Literal maxF64x2(const Literal& other) const;
+  Literal pminF64x2(const Literal& other) const;
+  Literal pmaxF64x2(const Literal& other) const;
   Literal truncSatToSI32x4() const;
   Literal truncSatToUI32x4() const;
   Literal truncSatToSI64x2() const;

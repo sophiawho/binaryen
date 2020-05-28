@@ -880,6 +880,8 @@ public:
         return left.addI64x2(right);
       case SubVecI64x2:
         return left.subI64x2(right);
+      case MulVecI64x2:
+        return left.mulI64x2(right);
 
       case AddVecF32x4:
         return left.addF32x4(right);
@@ -893,6 +895,10 @@ public:
         return left.minF32x4(right);
       case MaxVecF32x4:
         return left.maxF32x4(right);
+      case PMinVecF32x4:
+        return left.pminF32x4(right);
+      case PMaxVecF32x4:
+        return left.pmaxF32x4(right);
       case AddVecF64x2:
         return left.addF64x2(right);
       case SubVecF64x2:
@@ -905,6 +911,10 @@ public:
         return left.minF64x2(right);
       case MaxVecF64x2:
         return left.maxF64x2(right);
+      case PMinVecF64x2:
+        return left.pminF64x2(right);
+      case PMaxVecF64x2:
+        return left.pmaxF64x2(right);
 
       case NarrowSVecI16x8ToVecI8x16:
         return left.narrowSToVecI8x16(right);
@@ -1212,7 +1222,6 @@ public:
   Flow visitSIMDLoad(SIMDLoad* curr) { WASM_UNREACHABLE("unimp"); }
   Flow visitSIMDLoadSplat(SIMDLoad* curr) { WASM_UNREACHABLE("unimp"); }
   Flow visitSIMDLoadExtend(SIMDLoad* curr) { WASM_UNREACHABLE("unimp"); }
-  Flow visitPush(Push* curr) { WASM_UNREACHABLE("unimp"); }
   Flow visitPop(Pop* curr) { WASM_UNREACHABLE("unimp"); }
   Flow visitRefNull(RefNull* curr) {
     NOTE_ENTER("RefNull");
@@ -1262,7 +1271,24 @@ public:
     throwException(flow.getSingleValue());
     WASM_UNREACHABLE("rethrow");
   }
-  Flow visitBrOnExn(BrOnExn* curr) { WASM_UNREACHABLE("unimp"); }
+  Flow visitBrOnExn(BrOnExn* curr) {
+    NOTE_ENTER("BrOnExn");
+    Flow flow = this->visit(curr->exnref);
+    if (flow.breaking()) {
+      return flow;
+    }
+    if (flow.getType() == Type::nullref) {
+      trap("br_on_exn: argument is null");
+    }
+    const ExceptionPackage& ex = flow.getSingleValue().getExceptionPackage();
+    if (curr->event != ex.event) { // Not taken
+      return flow;
+    }
+    // Taken
+    flow.values = ex.values;
+    flow.breakTo = curr->name;
+    return flow;
+  }
 
   virtual void trap(const char* why) { WASM_UNREACHABLE("unimp"); }
 
@@ -1494,20 +1520,12 @@ public:
     NOTE_ENTER("SIMDLoadExtend");
     return Flow(NONCONSTANT_FLOW);
   }
-  Flow visitPush(Push* curr) {
-    NOTE_ENTER("Push");
-    return Flow(NONCONSTANT_FLOW);
-  }
   Flow visitPop(Pop* curr) {
     NOTE_ENTER("Pop");
     return Flow(NONCONSTANT_FLOW);
   }
   Flow visitTry(Try* curr) {
     NOTE_ENTER("Try");
-    return Flow(NONCONSTANT_FLOW);
-  }
-  Flow visitBrOnExn(BrOnExn* curr) {
-    NOTE_ENTER("BrOnExn");
     return Flow(NONCONSTANT_FLOW);
   }
 
@@ -2401,33 +2419,6 @@ private:
         instance.multiValues.push_back(e.exn);
         return this->visit(curr->catchBody);
       }
-    }
-    Flow visitBrOnExn(BrOnExn* curr) {
-      NOTE_ENTER("BrOnExn");
-      Flow flow = this->visit(curr->exnref);
-      if (flow.breaking()) {
-        return flow;
-      }
-      if (flow.getType() == Type::nullref) {
-        trap("br_on_exn: argument is null");
-      }
-      const ExceptionPackage& ex = flow.getSingleValue().getExceptionPackage();
-      if (curr->event != ex.event) { // Not taken
-        return flow;
-      }
-      // Taken
-      flow.values = ex.values;
-      flow.breakTo = curr->name;
-      return flow;
-    }
-    Flow visitPush(Push* curr) {
-      NOTE_ENTER("Push");
-      Flow value = this->visit(curr->value);
-      if (value.breaking()) {
-        return value;
-      }
-      instance.multiValues.push_back(value.getSingleValue());
-      return Flow();
     }
     Flow visitPop(Pop* curr) {
       NOTE_ENTER("Pop");

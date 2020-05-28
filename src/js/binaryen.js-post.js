@@ -97,7 +97,6 @@ function initializeConstants() {
     'BrOnExn',
     'TupleMake',
     'TupleExtract',
-    'Push',
     'Pop'
   ].forEach(function(name) {
     Module['ExpressionIds'][name] = Module[name + 'Id'] = Module['_Binaryen' + name + 'Id']();
@@ -410,6 +409,7 @@ function initializeConstants() {
     'ShrUVecI64x2',
     'AddVecI64x2',
     'SubVecI64x2',
+    'MulVecI64x2',
     'AbsVecF32x4',
     'NegVecF32x4',
     'SqrtVecF32x4',
@@ -421,6 +421,8 @@ function initializeConstants() {
     'DivVecF32x4',
     'MinVecF32x4',
     'MaxVecF32x4',
+    'PMinVecF32x4',
+    'PMaxVecF32x4',
     'AbsVecF64x2',
     'NegVecF64x2',
     'SqrtVecF64x2',
@@ -432,6 +434,8 @@ function initializeConstants() {
     'DivVecF64x2',
     'MinVecF64x2',
     'MaxVecF64x2',
+    'PMinVecF64x2',
+    'PMaxVecF64x2',
     'TruncSatSVecF32x4ToVecI32x4',
     'TruncSatUVecF32x4ToVecI32x4',
     'TruncSatSVecF64x2ToVecI64x2',
@@ -1829,6 +1833,9 @@ function wrapModule(module, self) {
     'sub': function(left, right) {
       return Module['_BinaryenBinary'](module, Module['SubVecI64x2'], left, right);
     },
+    'mul': function(left, right) {
+      return Module['_BinaryenBinary'](module, Module['MulVecI64x2'], left, right);
+    },
     'trunc_sat_f64x2_s': function(value) {
       return Module['_BinaryenUnary'](module, Module['TruncSatSVecF64x2ToVecI64x2'], value);
     },
@@ -1904,6 +1911,12 @@ function wrapModule(module, self) {
     'max': function(left, right) {
       return Module['_BinaryenBinary'](module, Module['MaxVecF32x4'], left, right);
     },
+    'pmin': function(left, right) {
+      return Module['_BinaryenBinary'](module, Module['PMinVecF32x4'], left, right);
+    },
+    'pmax': function(left, right) {
+      return Module['_BinaryenBinary'](module, Module['PMaxVecF32x4'], left, right);
+    },
     'convert_i32x4_s': function(value) {
       return Module['_BinaryenUnary'](module, Module['ConvertSVecI32x4ToVecF32x4'], value);
     },
@@ -1972,6 +1985,12 @@ function wrapModule(module, self) {
     },
     'max': function(left, right) {
       return Module['_BinaryenBinary'](module, Module['MaxVecF64x2'], left, right);
+    },
+    'pmin': function(left, right) {
+      return Module['_BinaryenBinary'](module, Module['PMinVecF64x2'], left, right);
+    },
+    'pmax': function(left, right) {
+      return Module['_BinaryenBinary'](module, Module['PMaxVecF64x2'], left, right);
     },
     'convert_i64x2_s': function(value) {
       return Module['_BinaryenUnary'](module, Module['ConvertSVecI64x2ToVecF64x2'], value);
@@ -2098,9 +2117,6 @@ function wrapModule(module, self) {
     return preserveStack(function() {
       return Module['_BinaryenBrOnExn'](module, strToStack(label), strToStack(event_), exnref);
     });
-  };
-  self['push'] = function(value) {
-    return Module['_BinaryenPush'](module, value);
   };
 
   self['tuple'] = {
@@ -2406,6 +2422,9 @@ function wrapModule(module, self) {
   };
   self['setDebugLocation'] = function(func, expr, fileIndex, lineNumber, columnNumber) {
     return Module['_BinaryenFunctionSetDebugLocation'](func, expr, fileIndex, lineNumber, columnNumber);
+  };
+  self['copyExpression'] = function(expr) {
+    return Module['_BinaryenExpressionCopy'](expr, module);
   };
 
   return self;
@@ -2845,11 +2864,6 @@ Module['getExpressionInfo'] = function(expr) {
         'type': type,
         'tuple': Module['_BinaryenTupleExtractGetTuple'](expr),
         'index': Module['_BinaryenTupleExtractGetIndex'](expr)
-      };
-    case Module['PushId']:
-      return {
-        'id': id,
-        'value': Module['_BinaryenPushGetValue'](expr)
       };
 
     default:

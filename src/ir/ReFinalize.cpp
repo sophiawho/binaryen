@@ -130,12 +130,12 @@ void ReFinalize::visitBrOnExn(BrOnExn* curr) {
   curr->finalize();
   if (curr->exnref->type == Type::unreachable) {
     replaceUntaken(curr->exnref, nullptr);
+  } else {
+    updateBreakValueType(curr->name, curr->sent);
   }
-  updateBreakValueType(curr->name, curr->sent);
 }
 void ReFinalize::visitNop(Nop* curr) { curr->finalize(); }
 void ReFinalize::visitUnreachable(Unreachable* curr) { curr->finalize(); }
-void ReFinalize::visitPush(Push* curr) { curr->finalize(); }
 void ReFinalize::visitPop(Pop* curr) { curr->finalize(); }
 void ReFinalize::visitTupleMake(TupleMake* curr) { curr->finalize(); }
 void ReFinalize::visitTupleExtract(TupleExtract* curr) { curr->finalize(); }

@@ -148,14 +148,6 @@ struct DeadCodeElimination
     reachable = false;
   }
 
-  void visitBrOnExn(BrOnExn* curr) {
-    if (isDead(curr->exnref)) {
-      replaceCurrent(curr->exnref);
-      return;
-    }
-    addBreak(curr->name);
-  }
-
   void visitReturn(Return* curr) {
     if (isDead(curr->value)) {
       replaceCurrent(curr->value);
@@ -259,6 +251,18 @@ struct DeadCodeElimination
     typeUpdater.maybeUpdateTypeToUnreachable(curr);
   }
 
+  void visitThrow(Throw* curr) { reachable = false; }
+
+  void visitRethrow(Rethrow* curr) { reachable = false; }
+
+  void visitBrOnExn(BrOnExn* curr) {
+    if (isDead(curr->exnref)) {
+      replaceCurrent(curr->exnref);
+      return;
+    }
+    addBreak(curr->name);
+  }
+
   static void scan(DeadCodeElimination* self, Expression** currp) {
     auto* curr = *currp;
     if (!self->reachable) {
@@ -347,8 +351,6 @@ struct DeadCodeElimination
           DELEGATE(MemoryCopy);
         case Expression::Id::MemoryFillId:
           DELEGATE(MemoryFill);
-        case Expression::Id::PushId:
-          DELEGATE(Push);
         case Expression::Id::PopId:
           DELEGATE(Pop);
         case Expression::Id::RefNullId:

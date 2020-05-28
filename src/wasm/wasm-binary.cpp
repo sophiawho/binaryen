@@ -1652,10 +1652,6 @@ void WasmBinaryBuilder::readNextDebugLocation() {
   }
 
   while (nextDebugLocation.first && nextDebugLocation.first <= pos) {
-    if (nextDebugLocation.first < pos) {
-      std::cerr << "skipping debug location info for 0x";
-      std::cerr << std::hex << nextDebugLocation.first << std::dec << std::endl;
-    }
     debugLocation.clear();
     // use debugLocation only for function expressions
     if (currFunction) {
@@ -3985,6 +3981,10 @@ bool WasmBinaryBuilder::maybeVisitSIMDBinary(Expression*& out, uint32_t code) {
       curr = allocator.alloc<Binary>();
       curr->op = SubVecI64x2;
       break;
+    case BinaryConsts::I64x2Mul:
+      curr = allocator.alloc<Binary>();
+      curr->op = MulVecI64x2;
+      break;
     case BinaryConsts::F32x4Add:
       curr = allocator.alloc<Binary>();
       curr->op = AddVecF32x4;
@@ -4009,6 +4009,14 @@ bool WasmBinaryBuilder::maybeVisitSIMDBinary(Expression*& out, uint32_t code) {
       curr = allocator.alloc<Binary>();
       curr->op = MaxVecF32x4;
       break;
+    case BinaryConsts::F32x4PMin:
+      curr = allocator.alloc<Binary>();
+      curr->op = PMinVecF32x4;
+      break;
+    case BinaryConsts::F32x4PMax:
+      curr = allocator.alloc<Binary>();
+      curr->op = PMaxVecF32x4;
+      break;
     case BinaryConsts::F64x2Add:
       curr = allocator.alloc<Binary>();
       curr->op = AddVecF64x2;
@@ -4032,6 +4040,14 @@ bool WasmBinaryBuilder::maybeVisitSIMDBinary(Expression*& out, uint32_t code) {
     case BinaryConsts::F64x2Max:
       curr = allocator.alloc<Binary>();
       curr->op = MaxVecF64x2;
+      break;
+    case BinaryConsts::F64x2PMin:
+      curr = allocator.alloc<Binary>();
+      curr->op = PMinVecF64x2;
+      break;
+    case BinaryConsts::F64x2PMax:
+      curr = allocator.alloc<Binary>();
+      curr->op = PMaxVecF64x2;
       break;
     case BinaryConsts::I8x16NarrowSI16x8:
       curr = allocator.alloc<Binary>();

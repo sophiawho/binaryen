@@ -790,6 +790,12 @@
    (local.get $1)
   )
  )
+ (func $i64x2.mul (param $0 v128) (param $1 v128) (result v128)
+  (i64x2.mul
+   (local.get $0)
+   (local.get $1)
+  )
+ )
  (func $f32x4.add (param $0 v128) (param $1 v128) (result v128)
   (f32x4.add
    (local.get $0)
@@ -822,6 +828,18 @@
  )
  (func $f32x4.max (param $0 v128) (param $1 v128) (result v128)
   (f32x4.max
+   (local.get $0)
+   (local.get $1)
+  )
+ )
+ (func $f32x4.pmin (param $0 v128) (param $1 v128) (result v128)
+  (f32x4.pmin
+   (local.get $0)
+   (local.get $1)
+  )
+ )
+ (func $f32x4.pmax (param $0 v128) (param $1 v128) (result v128)
+  (f32x4.pmax
    (local.get $0)
    (local.get $1)
   )
@@ -887,6 +905,18 @@
  )
  (func $f64x2.max (param $0 v128) (param $1 v128) (result v128)
   (f64x2.max
+   (local.get $0)
+   (local.get $1)
+  )
+ )
+ (func $f64x2.pmin (param $0 v128) (param $1 v128) (result v128)
+  (f64x2.pmin
+   (local.get $0)
+   (local.get $1)
+  )
+ )
+ (func $f64x2.pmax (param $0 v128) (param $1 v128) (result v128)
+  (f64x2.pmax
    (local.get $0)
    (local.get $1)
   )

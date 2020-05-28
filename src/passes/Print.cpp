@@ -1318,6 +1318,9 @@ struct PrintExpressionContents
       case SubVecI64x2:
         o << "i64x2.sub";
         break;
+      case MulVecI64x2:
+        o << "i64x2.mul";
+        break;
 
       case AddVecF32x4:
         o << "f32x4.add";
@@ -1337,6 +1340,12 @@ struct PrintExpressionContents
       case MaxVecF32x4:
         o << "f32x4.max";
         break;
+      case PMinVecF32x4:
+        o << "f32x4.pmin";
+        break;
+      case PMaxVecF32x4:
+        o << "f32x4.pmax";
+        break;
       case AddVecF64x2:
         o << "f64x2.add";
         break;
@@ -1354,6 +1363,12 @@ struct PrintExpressionContents
         break;
       case MaxVecF64x2:
         o << "f64x2.max";
+        break;
+      case PMinVecF64x2:
+        o << "f64x2.pmin";
+        break;
+      case PMaxVecF64x2:
+        o << "f64x2.pmax";
         break;
 
       case NarrowSVecI16x8ToVecI8x16:
@@ -1421,7 +1436,6 @@ struct PrintExpressionContents
   }
   void visitNop(Nop* curr) { printMinor(o, "nop"); }
   void visitUnreachable(Unreachable* curr) { printMinor(o, "unreachable"); }
-  void visitPush(Push* curr) { prepareColor(o) << "push"; }
   void visitPop(Pop* curr) {
     prepareColor(o) << curr->type;
     o << ".pop";
@@ -1930,9 +1944,11 @@ struct PrintSExpression : public OverriddenVisitor<PrintSExpression> {
   }
   // try-catch-end is written in the folded wat format as
   // (try
+  //  (do
   //   ...
+  //  )
   //  (catch
-  //    ...
+  //   ...
   //  )
   // )
   // The parenthesis wrapping 'catch' is just a syntax and does not affect
@@ -1941,7 +1957,12 @@ struct PrintSExpression : public OverriddenVisitor<PrintSExpression> {
     o << '(';
     PrintExpressionContents(currFunction, o).visit(curr);
     incIndent();
-    maybePrintImplicitBlock(curr->body, false);
+    doIndent(o, indent);
+    o << "(do";
+    incIndent();
+    maybePrintImplicitBlock(curr->body, true);
+    decIndent();
+    o << "\n";
     doIndent(o, indent);
     o << "(catch";
     incIndent();
@@ -1985,13 +2006,6 @@ struct PrintSExpression : public OverriddenVisitor<PrintSExpression> {
     o << '(';
     PrintExpressionContents(currFunction, o).visit(curr);
     o << ')';
-  }
-  void visitPush(Push* curr) {
-    o << '(';
-    PrintExpressionContents(currFunction, o).visit(curr);
-    incIndent();
-    printFullLine(curr->value);
-    decIndent();
   }
   void visitPop(Pop* curr) {
     o << '(';
@@ -2578,9 +2592,9 @@ WasmPrinter::printStackIR(StackIR* ir, std::ostream& o, Function* func) {
     switch (inst->op) {
       case StackInst::Basic: {
         doIndent();
-        // push and pop are pseudo instructions and should not be printed in the
-        // stack IR format to make it valid wat form.
-        if (inst->origin->is<Push>() || inst->origin->is<Pop>()) {
+        // Pop is a pseudo instruction and should not be printed in the stack IR
+        // format to make it valid wat form.
+        if (inst->origin->is<Pop>()) {
           break;
         }
         PrintExpressionContents(func, o).visit(inst->origin);

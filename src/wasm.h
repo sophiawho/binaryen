@@ -394,18 +394,23 @@ enum BinaryOp {
   DotSVecI16x8ToVecI32x4,
   AddVecI64x2,
   SubVecI64x2,
+  MulVecI64x2,
   AddVecF32x4,
   SubVecF32x4,
   MulVecF32x4,
   DivVecF32x4,
   MinVecF32x4,
   MaxVecF32x4,
+  PMinVecF32x4,
+  PMaxVecF32x4,
   AddVecF64x2,
   SubVecF64x2,
   MulVecF64x2,
   DivVecF64x2,
   MinVecF64x2,
   MaxVecF64x2,
+  PMinVecF64x2,
+  PMaxVecF64x2,
 
   // SIMD Conversion
   NarrowSVecI16x8ToVecI8x16,
@@ -535,7 +540,6 @@ public:
     DataDropId,
     MemoryCopyId,
     MemoryFillId,
-    PushId,
     PopId,
     RefNullId,
     RefIsNullId,
@@ -1062,25 +1066,8 @@ public:
   Unreachable(MixedArena& allocator) : Unreachable() {}
 };
 
-// A multivalue push. This represents a push of a value, which will be
-// used in the next return. That is, a multivalue return is done by
-// pushing some values, then doing a return (with a value as well).
-// For more on this design, see the readme.
-class Push : public SpecificExpression<Expression::PushId> {
-public:
-  Push() = default;
-  Push(MixedArena& allocator) {}
-
-  Expression* value;
-
-  void finalize();
-};
-
-// A multivalue pop. This represents a pop of a value, which arrived
-// from a multivalue call or other situation where there are things on
-// the stack. That is, a multivalue-returning call is done by doing
-// the call, receiving the first value normally, and receiving the others
-// via calls to pop.
+// Represents a pop of a value that arrives as an implicit argument to the
+// current block. Currently used in exception handling.
 class Pop : public SpecificExpression<Expression::PopId> {
 public:
   Pop() = default;

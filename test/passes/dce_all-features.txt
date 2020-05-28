@@ -503,20 +503,28 @@
 )
 (module
  (type $none_=>_none (func))
+ (event $e (attr 0) (param))
  (func $foo
   (nop)
  )
  (func $try_unreachable
   (try
-   (unreachable)
+   (do
+    (unreachable)
+   )
    (catch
+    (drop
+     (exnref.pop)
+    )
    )
   )
   (call $foo)
  )
  (func $catch_unreachable
   (try
-   (nop)
+   (do
+    (nop)
+   )
    (catch
     (unreachable)
    )
@@ -525,21 +533,21 @@
  )
  (func $both_unreachable
   (try
-   (unreachable)
+   (do
+    (unreachable)
+   )
    (catch
     (unreachable)
    )
   )
  )
-)
-(module
- (type $none_=>_none (func))
- (func $foo
-  (nop)
+ (func $throw
+  (throw $e
+  )
  )
- (func $push_unreachable
-  (push
-   (unreachable)
+ (func $rethrow
+  (rethrow
+   (ref.null)
   )
  )
 )
