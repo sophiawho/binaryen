@@ -1,21 +1,5 @@
-/*
- * Copyright 2016 WebAssembly Community Group participants
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 //
-// Prints the call graph in .dot format. You can use http://www.graphviz.org/ to
+// Prints the control flow graph in .dot format. You can use http://www.graphviz.org/ to
 // view .dot files.
 //
 
@@ -29,25 +13,26 @@
 
 namespace wasm {
 
-struct PrintCallGraph : public Pass {
+struct PrintControlFlowGraph : public Pass {
   bool modifiesBinaryenIR() override { return false; }
 
   void run(PassRunner* runner, Module* module) override {
     std::ostream& o = std::cout;
-    o << "digraph call {\n"
-         "  rankdir = LR;\n"
-         "  subgraph cluster_key {\n"
-         "    node [shape=box, fontname=courier, fontsize=10];\n"
-         "    edge [fontname=courier, fontsize=10];\n"
-         "    label = \"Key\";\n"
-         "    \"Import\" [style=\"filled\", fillcolor=\"turquoise\"];\n"
-         "    \"Export\" [style=\"filled\", fillcolor=\"gray\"];\n"
-         "    \"Indirect Target\" [style=\"filled, rounded\", "
-         "fillcolor=\"white\"];\n"
-         "    \"A\" -> \"B\" [style=\"filled, rounded\", label = \"Direct "
-         "Call\"];\n"
-         "  }\n\n"
-         "  node [shape=box, fontname=courier, fontsize=10];\n";
+     o << "Sophia\n";
+    // o << "digraph call {\n"
+    //      "  rankdir = LR;\n"
+    //      "  subgraph cluster_key {\n"
+    //      "    node [shape=box, fontname=courier, fontsize=10];\n"
+    //      "    edge [fontname=courier, fontsize=10];\n"
+    //      "    label = \"Key\";\n"
+    //      "    \"Import\" [style=\"filled\", fillcolor=\"turquoise\"];\n"
+    //      "    \"Export\" [style=\"filled\", fillcolor=\"gray\"];\n"
+    //      "    \"Indirect Target\" [style=\"filled, rounded\", "
+    //      "fillcolor=\"white\"];\n"
+    //      "    \"A\" -> \"B\" [style=\"filled, rounded\", label = \"Direct "
+    //      "Call\"];\n"
+    //      "  }\n\n"
+    //      "  node [shape=box, fontname=courier, fontsize=10];\n";
 
     // Defined functions
     ModuleUtils::iterDefinedFunctions(*module, [&](Function* curr) {
@@ -109,6 +94,6 @@ struct PrintCallGraph : public Pass {
   }
 };
 
-Pass* createPrintCallGraphPass() { return new PrintCallGraph(); }
+Pass* createPrintControlFlowGraph() { return new PrintControlFlowGraph(); }
 
 } // namespace wasm

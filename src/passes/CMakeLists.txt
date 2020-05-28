@@ -49,6 +49,7 @@ set(passes_SOURCES
   Precompute.cpp
   Print.cpp
   PrintCallGraph.cpp
+  PrintControlFlowGraph.cpp
   PrintFeatures.cpp
   PrintFunctionMap.cpp
   RoundTrip.cpp

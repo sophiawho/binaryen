@@ -244,6 +244,8 @@ void PassRegistry::registerPasses() {
     "print-full", "print in full s-expression format", createFullPrinterPass);
   registerPass(
     "print-call-graph", "print call graph", createPrintCallGraphPass);
+  registerPass(
+    "print-control-flow", "print control flow graph", createPrintControlFlowGraph);
   registerPass("print-function-map",
                "print a map of function indexes to names",
                createPrintFunctionMapPass);
