@@ -16,9 +16,67 @@ namespace wasm {
 struct PrintControlFlowGraph : public Pass {
   bool modifiesBinaryenIR() override { return false; }
 
+  void printExpression(Expression* e) {
+    switch (e->_id) {
+          case Expression::Id::BlockId: {
+            // Possibly get block name
+            std::cout << "Block expression: " << static_cast<Block*>(e)->name << "\n";
+            int size = static_cast<Block*>(e)->list.size();
+            std::cout << size << "\n";
+            for (int i=0; i<size; i++) {
+              Expression *currExp = static_cast<Block*>(e)->list[i];
+              printExpression(currExp);
+            }
+            break;
+          }
+          case Expression::Id::ConstId: {
+            std::cout << "Constant expression\n";
+            Literal l = getSingleLiteralFromConstExpression(e);
+            // Print out literal
+            if (l.type == Type::i32) {
+              std::cout << "Literal value: " << l.geti32() << "\n";
+            } else if (l.type == Type::i64) {
+              std::cout << "Literal value: " << l.geti64() << "\n";
+            }
+            break;
+          }
+          case Expression::Id::BinaryId: {
+            std::cout << "Binary expression\n";
+            Expression *left = static_cast<Binary*>(e)->left;
+            Expression *right = static_cast<Binary*>(e)->right;
+            std::cout << int(left->_id) << "\n";
+            std::cout << int(right->_id) << "\n";
+            // Print out LocalGet 
+            // class LocalGet : public SpecificExpression<Expression::LocalGetId> {
+            // Index leftIndex = static_cast<LocalGet*>(left)->index;
+            std::cout << "Left index: " << static_cast<LocalGet*>(left)->index << "\n";
+            std::cout << "Right index: " << static_cast<LocalGet*>(right)->index << "\n";
+            break;
+            }
+          default: 
+            std::cout << "No case for expression type " << int(e->_id) << "\n";
+        }
+  }
+
   void run(PassRunner* runner, Module* module) override {
     std::ostream& o = std::cout;
-     o << "Sophia\n";
+    //  o << "Sophia\n";
+    //  Sophia
+    //     "0" [style="filled", fillcolor="white"];
+    //     "0" [style="filled", fillcolor="gray"];
+    //     }
+
+    // .wat follows
+    // (module
+    // (table 0 anyfunc)
+    // (memory $0 1)
+    // (export "memory" (memory $0))
+    // (export "main" (func $main))
+    // (func $main (; 0 ;) (result i32)
+    // (i32.const 3)
+    // )
+    // )
+
     // o << "digraph call {\n"
     //      "  rankdir = LR;\n"
     //      "  subgraph cluster_key {\n"
@@ -45,6 +103,17 @@ struct PrintControlFlowGraph : public Pass {
       o << "  \"" << curr->name
         << "\" [style=\"filled\", fillcolor=\"turquoise\"];\n";
     });
+
+    // Iterate through each function
+    for (auto& curr : module->functions) {
+        std::cout << " Function name: " << curr->name << "\n";
+        // Visit expression
+        if (!curr->body) {
+            std::cout << "Function does not have a body\n";
+            continue;
+        }
+        printExpression(curr->body);
+    }
 
     // Exports
     for (auto& curr : module->exports) {
