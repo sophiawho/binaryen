@@ -18,41 +18,109 @@ struct PrintControlFlowGraph : public Pass {
 
   void printExpression(Expression* e) {
     switch (e->_id) {
-          case Expression::Id::BlockId: {
+          case Expression::Id::BlockId: { // 1
             // Possibly get block name
-            std::cout << "Block expression: " << static_cast<Block*>(e)->name << "\n";
             int size = static_cast<Block*>(e)->list.size();
-            std::cout << size << "\n";
+            std::cout << "Block expression: " << static_cast<Block*>(e)->name << "with block size: " << size << "\n";
             for (int i=0; i<size; i++) {
               Expression *currExp = static_cast<Block*>(e)->list[i];
               printExpression(currExp);
             }
             break;
           }
-          case Expression::Id::ConstId: {
-            std::cout << "Constant expression\n";
+          case Expression::Id::LoopId: {
+            std::cout << "Loop ID\n";
+            // (loop $label$2 (result i32)
+            // (br_if $label$2
+            // (i32.lt_s
+            //   (tee_local $0
+            //   (i32.add
+            //     (get_local $0)
+            //     (i32.const 1)
+            //   )
+            //   )
+            //   (tee_local $1
+            //   (i32.add
+            //     (get_local $1)
+            //     (i32.const -1)
+            //   )
+            //   )
+            // )
+            // )
+            // (br $label$0)
+            break;
+          }
+          case Expression::Id::SwitchId: {
+            std::cout << "Switch ID\n";
+            break;
+          }
+          case Expression::Id::CallId: {
+            std::cout << "Call ID\n";
+            break;
+          }
+          case Expression::Id::LocalGetId: {
+            std::cout << "Local get ID\n";
+            break;
+          }
+          case Expression::Id::LocalSetId: {
+            // These instructions get or set the values of variables, respectively. 
+            // The 𝗅𝗈𝖼𝖺𝗅.𝗍𝖾𝖾 instruction is like 𝗅𝗈𝖼𝖺𝗅.𝗌𝖾𝗍 but also returns its argument.
+            LocalSet* ls = static_cast<LocalSet*>(e);
+            if (!ls->isTee()) {
+              std::cout << "Local set ID\n";
+            } else {
+              std::cout << "Local tee ID\n";
+            }
+            printExpression(ls->value);
+            break;
+          }
+          case Expression::Id::LoadId: {
+            std::cout << "Load ID\n";
+            break;
+          }
+          case Expression::Id::StoreId: {
+            Store *s = static_cast<Store*>(e);
+            std::cout << "Store expression with offset: " << s->offset.addr << "\n";
+            printExpression(s->ptr);
+            printExpression(s->value);
+            // (i32.store offset=4
+            //   (i32.const 0)
+            //   (tee_local $0
+            //     (i32.sub
+            //     (i32.load offset=4
+            //       (i32.const 0)
+            //     )
+            //     (i32.const 16)
+            //     )
+            //   )
+            // )
+            break;
+          }
+          case Expression::Id::ConstId: { // 14
             Literal l = getSingleLiteralFromConstExpression(e);
             // Print out literal
             if (l.type == Type::i32) {
-              std::cout << "Literal value: " << l.geti32() << "\n";
+              std::cout << "Constant exprssion with literal value: " << l.geti32() << "\n";
             } else if (l.type == Type::i64) {
-              std::cout << "Literal value: " << l.geti64() << "\n";
+              std::cout << "Constant exprssion with literal value: " << l.geti64() << "\n";
             }
             break;
           }
-          case Expression::Id::BinaryId: {
-            std::cout << "Binary expression\n";
+          case Expression::Id::BinaryId: { // 16
+            BinaryOp op = static_cast<Binary*>(e)->op;
+            std::cout << "Binary expression with binop: " << op << "\n"; // 0 = add, 1 = sub
             Expression *left = static_cast<Binary*>(e)->left;
             Expression *right = static_cast<Binary*>(e)->right;
-            std::cout << int(left->_id) << "\n";
-            std::cout << int(right->_id) << "\n";
-            // Print out LocalGet 
-            // class LocalGet : public SpecificExpression<Expression::LocalGetId> {
-            // Index leftIndex = static_cast<LocalGet*>(left)->index;
-            std::cout << "Left index: " << static_cast<LocalGet*>(left)->index << "\n";
-            std::cout << "Right index: " << static_cast<LocalGet*>(right)->index << "\n";
+            printExpression(left);
+            printExpression(right);
             break;
             }
+          case Expression::Id::DropId: {
+            std::cout << "Drop Expression\n";
+            printExpression(static_cast<Drop*>(e)->value);
+            // Calling another function
+            break;
+          }
           default: 
             std::cout << "No case for expression type " << int(e->_id) << "\n";
         }

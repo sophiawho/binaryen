@@ -503,27 +503,27 @@ class Expression {
 public:
   enum Id {
     InvalidId = 0,
-    BlockId,
-    IfId,
-    LoopId,
-    BreakId,
-    SwitchId,
-    CallId,
-    CallIndirectId,
-    LocalGetId,
-    LocalSetId,
-    GlobalGetId,
-    GlobalSetId,
-    LoadId,
-    StoreId,
-    ConstId,
-    UnaryId,
-    BinaryId,
-    SelectId,
-    DropId,
-    ReturnId,
-    HostId,
-    NopId,
+    BlockId, // 1 - DONE
+    IfId, // 2
+    LoopId, // 3 - TODO
+    BreakId, // 4
+    SwitchId, // 5 - TODO
+    CallId, // 6 - TODO
+    CallIndirectId, // 7
+    LocalGetId, // 8 - TODO
+    LocalSetId, // 9 - DONE
+    GlobalGetId, // 10 
+    GlobalSetId, // 11
+    LoadId, // 12 - TODO
+    StoreId, // 13 - DONE
+    ConstId, // 14 - DONE
+    UnaryId, // 15
+    BinaryId, // 16 - DONE
+    SelectId, // 17
+    DropId, // 18 - DONE
+    ReturnId, // 19
+    HostId, // 20
+    NopId, // 21
     UnreachableId,
     AtomicRMWId,
     AtomicCmpxchgId,
