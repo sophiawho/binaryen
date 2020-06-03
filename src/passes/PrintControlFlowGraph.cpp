@@ -16,15 +16,20 @@ namespace wasm {
 struct PrintControlFlowGraph : public Pass {
   bool modifiesBinaryenIR() override { return false; }
 
-  void printExpression(Expression* e) {
+  void printIndent(int size) {
+    for (int i=0; i<size; i++) std::cout << "  ";
+  }
+
+  void printExpression(Expression* e, int indent) {
+    printIndent(indent);
     switch (e->_id) {
           case Expression::Id::BlockId: { // 1
             // Possibly get block name
             int size = static_cast<Block*>(e)->list.size();
-            std::cout << "Block expression: " << static_cast<Block*>(e)->name << "with block size: " << size << "\n";
+            std::cout << "Block expression: " << static_cast<Block*>(e)->name << " with block size: " << size << "\n";
             for (int i=0; i<size; i++) {
               Expression *currExp = static_cast<Block*>(e)->list[i];
-              printExpression(currExp);
+              printExpression(currExp, indent + 1);
             }
             break;
           }
@@ -54,12 +59,18 @@ struct PrintControlFlowGraph : public Pass {
             std::cout << "Switch ID\n";
             break;
           }
-          case Expression::Id::CallId: {
-            std::cout << "Call ID\n";
+          case Expression::Id::CallId: { // call printf
+            Call* call = static_cast<Call*>(e);
+            std::cout << "Call function: " << call->target << "\n";
+            int size = call->operands.size();
+            for (int i=0; i<size; i++) {
+              Expression *currExp = call->operands[i];
+              printExpression(currExp, indent+1);
+            }
             break;
           }
           case Expression::Id::LocalGetId: {
-            std::cout << "Local get ID\n";
+            std::cout << "Local get ID with index: " << static_cast<LocalGet*>(e)->index << "\n";
             break;
           }
           case Expression::Id::LocalSetId: {
@@ -71,18 +82,20 @@ struct PrintControlFlowGraph : public Pass {
             } else {
               std::cout << "Local tee ID\n";
             }
-            printExpression(ls->value);
+            printExpression(ls->value, indent+1);
             break;
           }
           case Expression::Id::LoadId: {
-            std::cout << "Load ID\n";
+            Load *load = static_cast<Load*>(e);
+            std::cout << "Load ID with offset: " << load->offset.addr << "\n";
+            printExpression(load->ptr, indent+1);
             break;
           }
           case Expression::Id::StoreId: {
             Store *s = static_cast<Store*>(e);
             std::cout << "Store expression with offset: " << s->offset.addr << "\n";
-            printExpression(s->ptr);
-            printExpression(s->value);
+            printExpression(s->ptr, indent+1);
+            printExpression(s->value, indent+1);
             // (i32.store offset=4
             //   (i32.const 0)
             //   (tee_local $0
@@ -111,13 +124,13 @@ struct PrintControlFlowGraph : public Pass {
             std::cout << "Binary expression with binop: " << op << "\n"; // 0 = add, 1 = sub
             Expression *left = static_cast<Binary*>(e)->left;
             Expression *right = static_cast<Binary*>(e)->right;
-            printExpression(left);
-            printExpression(right);
+            printExpression(left, indent+1);
+            printExpression(right, indent+1);
             break;
             }
           case Expression::Id::DropId: {
             std::cout << "Drop Expression\n";
-            printExpression(static_cast<Drop*>(e)->value);
+            printExpression(static_cast<Drop*>(e)->value, indent+1);
             // Calling another function
             break;
           }
@@ -174,13 +187,13 @@ struct PrintControlFlowGraph : public Pass {
 
     // Iterate through each function
     for (auto& curr : module->functions) {
-        std::cout << " Function name: " << curr->name << "\n";
+        std::cout << "Function name: " << curr->name << "\n";
         // Visit expression
         if (!curr->body) {
             std::cout << "Function does not have a body\n";
             continue;
         }
-        printExpression(curr->body);
+        printExpression(curr->body, 1);
     }
 
     // Exports
