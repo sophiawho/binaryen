@@ -29,11 +29,13 @@ struct PrintControlFlowGraph : public Pass {
     switch (e->_id) {
           case Expression::Id::BlockId: { // 1
             int size = static_cast<Block*>(e)->list.size();
+            std::cout << "\nDEBUG: block size: " << size;
             for (int i=0; i<size-1; i++) {
               Expression *lhs = static_cast<Block*>(e)->list[i];
               Expression *rhs = static_cast<Block*>(e)->list[i+1];
               printGraphEdges(lhs, rhs, false);
             }
+            std::cout << "\n";
             for (int i=0; i<size; i++) {
               Expression *curr = static_cast<Block*>(e)->list[i];
               traverseExpression(curr);
@@ -41,25 +43,8 @@ struct PrintControlFlowGraph : public Pass {
             break;
           }
           case Expression::Id::LoopId: {
-            // TODO
-            // (loop $label$2 (result i32)
-            // (br_if $label$2
-            // (i32.lt_s
-            //   (tee_local $0
-            //   (i32.add
-            //     (get_local $0)
-            //     (i32.const 1)
-            //   )
-            //   )
-            //   (tee_local $1
-            //   (i32.add
-            //     (get_local $1)
-            //     (i32.const -1)
-            //   )
-            //   )
-            // )
-            // )
-            // (br $label$0)
+            Loop* loop = static_cast<Loop*>(e);
+            traverseExpression(loop->body);
             break;
           }
           case Expression::Id::SwitchId: {
@@ -129,8 +114,13 @@ struct PrintControlFlowGraph : public Pass {
           case Expression::Id::BlockId: { // 1
             break;
           }
+          case Expression::Id::IfId: {
+            // If* ifExp = static_cast<If*>(e);
+            std::cout << "if_expression";
+          }
           case Expression::Id::LoopId: {
-            std::cout << "loop";
+            Loop* loop = static_cast<Loop*>(e);
+            std::cout << "\n\nDEBUG: loop [name]: " << loop->name;
             // (loop $label$2 (result i32)
             // (br_if $label$2
             // (i32.lt_s
@@ -150,6 +140,11 @@ struct PrintControlFlowGraph : public Pass {
             // )
             // (br $label$0)
             break;
+          }
+          case Expression::Id::BreakId: {
+            Break* breakExp = static_cast<Break*>(e);
+            std::cout << "break to label: " << breakExp->name << "$end$";
+            // label id
           }
           case Expression::Id::SwitchId: {
             std::cout << "switch";
@@ -205,7 +200,7 @@ struct PrintControlFlowGraph : public Pass {
             break;
           }
           default: 
-            std::cout << "no_case_for_exp_type" << int(e->_id);
+            std::cout << "no_case_for_exp_type_" << int(e->_id);
         }
     std::cout << "\"";
   }
