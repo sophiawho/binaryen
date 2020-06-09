@@ -6,11 +6,14 @@
 #include <iomanip>
 #include <memory>
 #include <string>
+#include <map>
 
 #include "ir/module-utils.h"
 #include "ir/utils.h"
 #include "pass.h"
 #include "wasm.h"
+
+using namespace std;
 
 namespace wasm {
 
@@ -18,7 +21,8 @@ struct PrintControlFlowGraph : public Pass {
 
   int nodeCounter = 1;
   bool functionPrinted = false;
-  std::string funcName = "";
+  string funcName = "";
+  map<string, int> labelMap;
 
   bool modifiesBinaryenIR() override { return false; }
 
@@ -26,28 +30,28 @@ struct PrintControlFlowGraph : public Pass {
     // Node Counter
     if (lhs->nodeCounter == -1) {
       lhs->nodeCounter = nodeCounter++;
-      std::cout << "\t" << lhs->nodeCounter << " [label = ";
+      cout << "\t" << lhs->nodeCounter << " [label = ";
       printExpression(lhs);
-      std::cout << "];\n";
+      cout << "];\n";
     } 
     if (rhs->nodeCounter == -1) {
       rhs->nodeCounter = nodeCounter++;
-      std::cout << "\t" << rhs->nodeCounter << " [label = ";
+      cout << "\t" << rhs->nodeCounter << " [label = ";
       printExpression(rhs);
-      std::cout << "];\n";
+      cout << "];\n";
     }
     // If LHS or RHS -> nodeCounter == -1
     // Assign a count based on nodeCounter and increment nodeCounter
     // stdout: $nodeCounter [label = printExpression(e)];\n
     // Then instead of printExpression, print $nodeCounter
-    std::cout << "\t";
+    cout << "\t";
     if (!functionPrinted) {
-      std::cout << "\"" << funcName << "\"" << " -> ";
+      cout << "\"" << funcName << "\"" << " -> ";
       functionPrinted = true;
     }
-    std::cout << lhs->nodeCounter << " -> " << rhs->nodeCounter;
-    if (isDotted) std::cout << " [style=dotted]";
-    std::cout << ";\n";
+    cout << lhs->nodeCounter << " -> " << rhs->nodeCounter;
+    if (isDotted) cout << " [style=dotted]";
+    cout << ";\n";
   }
 
   void traverseExpression(Expression* e) {
@@ -59,7 +63,7 @@ struct PrintControlFlowGraph : public Pass {
               Expression *rhs = static_cast<Block*>(e)->list[i+1];
               printGraphEdges(lhs, rhs, false);
             }
-            std::cout << "\t// end of block \n";
+            cout << "\t// end of block \n";
             for (int i=0; i<size; i++) {
               Expression *curr = static_cast<Block*>(e)->list[i];
               traverseExpression(curr);
@@ -133,18 +137,18 @@ struct PrintControlFlowGraph : public Pass {
   }
 
   void printExpression(Expression* e) {
-    std::cout << "\"";
+    cout << "\"";
     switch (e->_id) {
           case Expression::Id::BlockId: { // 1
             break;
           }
           case Expression::Id::IfId: {
             // If* ifExp = static_cast<If*>(e);
-            std::cout << "if_expression";
+            cout << "if_expression";
           }
           case Expression::Id::LoopId: {
             Loop* loop = static_cast<Loop*>(e);
-            std::cout << "\n\nDEBUG: loop [name]: " << loop->name;
+            cout << "\n\nDEBUG: loop [name]: " << loop->name;
             // (loop $label$2 (result i32)
             // (br_if $label$2
             // (i32.lt_s
@@ -167,20 +171,20 @@ struct PrintControlFlowGraph : public Pass {
           }
           case Expression::Id::BreakId: {
             Break* breakExp = static_cast<Break*>(e);
-            std::cout << "break to label: " << breakExp->name << "$end$";
+            cout << "break to label: " << breakExp->name << "$end$";
             // label id
           }
           case Expression::Id::SwitchId: {
-            std::cout << "switch";
+            cout << "switch";
             break;
           }
           case Expression::Id::CallId: { // call printf
             Call* call = static_cast<Call*>(e);
-            std::cout << "call_" << call->target;
+            cout << "call_" << call->target;
             break;
           }
           case Expression::Id::LocalGetId: {
-            std::cout << "local_get_idx_" << static_cast<LocalGet*>(e)->index;
+            cout << "local_get_idx_" << static_cast<LocalGet*>(e)->index;
             break;
           }
           case Expression::Id::LocalSetId: {
@@ -188,58 +192,58 @@ struct PrintControlFlowGraph : public Pass {
             // The 𝗅𝗈𝖼𝖺𝗅.𝗍𝖾𝖾 instruction is like 𝗅𝗈𝖼𝖺𝗅.𝗌𝖾𝗍 but also returns its argument.
             LocalSet* ls = static_cast<LocalSet*>(e);
             if (!ls->isTee()) {
-              std::cout << "local_set";
+              cout << "local_set";
             } else {
-              std::cout << "local_tee";
+              cout << "local_tee";
             }
             break;
           }
           case Expression::Id::LoadId: {
             Load *load = static_cast<Load*>(e);
-            std::cout << "load_with_offset_" << load->offset.addr;
+            cout << "load_with_offset_" << load->offset.addr;
             break;
           }
           case Expression::Id::StoreId: {
             Store *s = static_cast<Store*>(e);
-            std::cout << "store_with_offset_" << s->offset.addr;
+            cout << "store_with_offset_" << s->offset.addr;
             break;
           }
           case Expression::Id::ConstId: { // 14
             Literal l = getSingleLiteralFromConstExpression(e);
             // Print out literal
             if (l.type == Type::i32) {
-              std::cout << "constant_val_" << l.geti32();
+              cout << "constant_val_" << l.geti32();
             } else if (l.type == Type::i64) {
-              std::cout << "constant_val_" << l.geti64();
+              cout << "constant_val_" << l.geti64();
             }
             break;
           }
           case Expression::Id::BinaryId: { // 16
             BinaryOp op = static_cast<Binary*>(e)->op;
-            std::cout << "binop_" << op; // 0 = add, 1 = sub
+            cout << "binop_" << op; // 0 = add, 1 = sub
             break;
             }
           case Expression::Id::DropId: {
-            std::cout << "drop";
+            cout << "drop";
             break;
           }
           default: 
-            std::cout << "no_case_for_exp_type_" << int(e->_id);
+            cout << "no_case_for_exp_type_" << int(e->_id);
         }
-    std::cout << "\"";
+    cout << "\"";
   }
 
   void run(PassRunner* runner, Module* module) override {
-    std::ostream& o = std::cout;
+    ostream& o = cout;
     o << "digraph G {\n";
 
     // Iterate through each function
     for (auto& curr : module->functions) {
-        std::cout << "\n\t// begin function\n";
+        cout << "\n\t// begin function\n";
         funcName.clear();
         funcName += "function_";
         funcName += curr->name.str;
-        std::cout << "\t\"" << funcName << "\" [shape=Mdiamond];\n";
+        cout << "\t\"" << funcName << "\" [shape=Mdiamond];\n";
         // Visit expression
         if (!curr->body) {
             continue;
