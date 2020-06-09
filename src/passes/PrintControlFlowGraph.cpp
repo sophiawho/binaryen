@@ -5,6 +5,7 @@
 
 #include <iomanip>
 #include <memory>
+#include <string>
 
 #include "ir/module-utils.h"
 #include "ir/utils.h"
@@ -14,13 +15,37 @@
 namespace wasm {
 
 struct PrintControlFlowGraph : public Pass {
+
+  int nodeCounter = 1;
+  bool functionPrinted = false;
+  std::string funcName = "";
+
   bool modifiesBinaryenIR() override { return false; }
 
   void printGraphEdges(Expression *lhs, Expression *rhs, bool isDotted) {
+    // Node Counter
+    if (lhs->nodeCounter == -1) {
+      lhs->nodeCounter = nodeCounter++;
+      std::cout << "\t" << lhs->nodeCounter << " [label = ";
+      printExpression(lhs);
+      std::cout << "];\n";
+    } 
+    if (rhs->nodeCounter == -1) {
+      rhs->nodeCounter = nodeCounter++;
+      std::cout << "\t" << rhs->nodeCounter << " [label = ";
+      printExpression(rhs);
+      std::cout << "];\n";
+    }
+    // If LHS or RHS -> nodeCounter == -1
+    // Assign a count based on nodeCounter and increment nodeCounter
+    // stdout: $nodeCounter [label = printExpression(e)];\n
+    // Then instead of printExpression, print $nodeCounter
     std::cout << "\t";
-    printExpression(lhs);
-    std::cout << " -> ";
-    printExpression(rhs);
+    if (!functionPrinted) {
+      std::cout << "\"" << funcName << "\"" << " -> ";
+      functionPrinted = true;
+    }
+    std::cout << lhs->nodeCounter << " -> " << rhs->nodeCounter;
     if (isDotted) std::cout << " [style=dotted]";
     std::cout << ";\n";
   }
@@ -29,13 +54,12 @@ struct PrintControlFlowGraph : public Pass {
     switch (e->_id) {
           case Expression::Id::BlockId: { // 1
             int size = static_cast<Block*>(e)->list.size();
-            std::cout << "\nDEBUG: block size: " << size;
             for (int i=0; i<size-1; i++) {
               Expression *lhs = static_cast<Block*>(e)->list[i];
               Expression *rhs = static_cast<Block*>(e)->list[i+1];
               printGraphEdges(lhs, rhs, false);
             }
-            std::cout << "\n";
+            std::cout << "\t// end of block \n";
             for (int i=0; i<size; i++) {
               Expression *curr = static_cast<Block*>(e)->list[i];
               traverseExpression(curr);
@@ -208,15 +232,20 @@ struct PrintControlFlowGraph : public Pass {
   void run(PassRunner* runner, Module* module) override {
     std::ostream& o = std::cout;
     o << "digraph G {\n";
-    
+
     // Iterate through each function
     for (auto& curr : module->functions) {
-        std::cout << "\t\"" << curr->name << "\" [shape=Mdiamond];\n";
+        std::cout << "\n\t// begin function\n";
+        funcName.clear();
+        funcName += "function_";
+        funcName += curr->name.str;
+        std::cout << "\t\"" << funcName << "\" [shape=Mdiamond];\n";
         // Visit expression
         if (!curr->body) {
             continue;
         }
-        std::cout << "\t\"" << curr->name << "\" -> ";
+        functionPrinted = false;
+        // std::cout << "\t\"" << funcName << "\" -> ";
         traverseExpression(curr->body);
     }
 

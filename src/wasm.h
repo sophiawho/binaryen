@@ -580,6 +580,8 @@ public:
     assert(int(_id) == int(T::SpecificId));
     return (const T*)this;
   }
+
+  int nodeCounter = -1; // Unique nodes in .dot graph
 };
 
 const char* getExpressionName(Expression* curr);
