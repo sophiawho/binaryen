@@ -44,7 +44,7 @@ struct PrintControlFlowGraph : public Pass {
     // Print out graph edge
     cout << "\t";
     if (hasPrefix) {
-      cout << "\"" << prefix << "\"" << " -> ";
+      cout << prefix << " -> ";
       hasPrefix = false;
       prefix.clear();
     }
@@ -229,10 +229,11 @@ struct PrintControlFlowGraph : public Pass {
     for (auto& curr : module->functions) {
         cout << "\n\t// begin function\n";
         funcName.clear();
-        funcName += "function_";
+        funcName += "\"function_";
         funcName += curr->name.str;
+        funcName += "\"";
         prefix = funcName;
-        cout << "\t\"" << funcName << "\" [shape=Mdiamond];\n";
+        cout << "\t" << funcName << " [shape=Mdiamond];\n";
         // Visit expression
         if (!curr->body) {
             continue;
