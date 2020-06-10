@@ -20,14 +20,15 @@ namespace wasm {
 struct PrintControlFlowGraph : public Pass {
 
   int nodeCounter = 1;
-  bool functionPrinted = false;
+  bool hasPrefix = false;
+  string prefix = "";
   string funcName = "";
   map<string, int> labelMap;
 
   bool modifiesBinaryenIR() override { return false; }
 
   void printGraphEdges(Expression *lhs, Expression *rhs, bool isDotted) {
-    // Node Counter
+    // If new node, print out unique node count and label
     if (lhs->nodeCounter == -1) {
       lhs->nodeCounter = nodeCounter++;
       cout << "\t" << lhs->nodeCounter << " [label = ";
@@ -40,14 +41,12 @@ struct PrintControlFlowGraph : public Pass {
       printExpression(rhs);
       cout << "];\n";
     }
-    // If LHS or RHS -> nodeCounter == -1
-    // Assign a count based on nodeCounter and increment nodeCounter
-    // stdout: $nodeCounter [label = printExpression(e)];\n
-    // Then instead of printExpression, print $nodeCounter
+    // Print out graph edge
     cout << "\t";
-    if (!functionPrinted) {
-      cout << "\"" << funcName << "\"" << " -> ";
-      functionPrinted = true;
+    if (hasPrefix) {
+      cout << "\"" << prefix << "\"" << " -> ";
+      hasPrefix = false;
+      prefix.clear();
     }
     cout << lhs->nodeCounter << " -> " << rhs->nodeCounter;
     if (isDotted) cout << " [style=dotted]";
@@ -57,6 +56,10 @@ struct PrintControlFlowGraph : public Pass {
   void traverseExpression(Expression* e) {
     switch (e->_id) {
           case Expression::Id::BlockId: { // 1
+            hasPrefix = true;
+            if (prefix.length() == 0) { // Prefix is either a funcName or expressionNode->nodeCounter
+              prefix.append(to_string(e->nodeCounter));
+            }
             int size = static_cast<Block*>(e)->list.size();
             for (int i=0; i<size-1; i++) {
               Expression *lhs = static_cast<Block*>(e)->list[i];
@@ -72,6 +75,7 @@ struct PrintControlFlowGraph : public Pass {
           }
           case Expression::Id::LoopId: {
             Loop* loop = static_cast<Loop*>(e);
+            loop->body->nodeCounter = e->nodeCounter; // Assign loop body same unique node counter as loop
             traverseExpression(loop->body);
             break;
           }
@@ -148,30 +152,14 @@ struct PrintControlFlowGraph : public Pass {
           }
           case Expression::Id::LoopId: {
             Loop* loop = static_cast<Loop*>(e);
-            cout << "\n\nDEBUG: loop [name]: " << loop->name;
-            // (loop $label$2 (result i32)
-            // (br_if $label$2
-            // (i32.lt_s
-            //   (tee_local $0
-            //   (i32.add
-            //     (get_local $0)
-            //     (i32.const 1)
-            //   )
-            //   )
-            //   (tee_local $1
-            //   (i32.add
-            //     (get_local $1)
-            //     (i32.const -1)
-            //   )
-            //   )
-            // )
-            // )
-            // (br $label$0)
+            cout << "loop_" << loop->name;
+            labelMap.insert(pair<string, int>(funcName.append(loop->name.str), e->nodeCounter));
             break;
           }
           case Expression::Id::BreakId: {
             Break* breakExp = static_cast<Break*>(e);
-            cout << "break to label: " << breakExp->name << "$end$";
+            cout << "break_to_" << breakExp->name;
+            break;
             // label id
           }
           case Expression::Id::SwitchId: {
@@ -243,13 +231,12 @@ struct PrintControlFlowGraph : public Pass {
         funcName.clear();
         funcName += "function_";
         funcName += curr->name.str;
+        prefix = funcName;
         cout << "\t\"" << funcName << "\" [shape=Mdiamond];\n";
         // Visit expression
         if (!curr->body) {
             continue;
         }
-        functionPrinted = false;
-        // std::cout << "\t\"" << funcName << "\" -> ";
         traverseExpression(curr->body);
     }
 
