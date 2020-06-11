@@ -51,6 +51,17 @@ struct PrintControlFlowGraph : public Pass {
     cout << lhs->nodeCounter << " -> " << rhs->nodeCounter;
     if (isDotted) cout << " [style=dotted]";
     cout << ";\n";
+    checkBreakExpression(lhs);
+    checkBreakExpression(rhs);
+  }
+
+  void checkBreakExpression(Expression *e) {
+    if (e->_id != Expression::Id::BreakId) return;
+    Break* breakExp = static_cast<Break*>(e);
+    string key = funcName;
+    key.append(breakExp->name.str);
+    int labelNode = labelMap.at(key);
+    cout << "\t" << e->nodeCounter << " -> " << labelNode << ";\n";
   }
 
   void traverseExpression(Expression* e) {
@@ -78,6 +89,10 @@ struct PrintControlFlowGraph : public Pass {
             loop->body->nodeCounter = e->nodeCounter; // Assign loop body same unique node counter as loop
             traverseExpression(loop->body);
             break;
+          }
+          case Expression::Id::BreakId: {
+            // TODO break conditional expression
+            // Break* breakExp = static_cast<Break*>(e);
           }
           case Expression::Id::SwitchId: {
             // TODO
@@ -153,11 +168,15 @@ struct PrintControlFlowGraph : public Pass {
           case Expression::Id::LoopId: {
             Loop* loop = static_cast<Loop*>(e);
             cout << "loop_" << loop->name;
-            labelMap.insert(pair<string, int>(funcName.append(loop->name.str), e->nodeCounter));
+            string key = funcName;
+            key.append(loop->name.str);
+            labelMap.insert(pair<string, int>(key, e->nodeCounter));
             break;
           }
           case Expression::Id::BreakId: {
             Break* breakExp = static_cast<Break*>(e);
+            // Branch instructions come in several flavors: 
+            // 𝖻𝗋 performs an unconditional branch, 𝖻𝗋_𝗂𝖿 performs a conditional branch
             cout << "break_to_" << breakExp->name;
             break;
             // label id
