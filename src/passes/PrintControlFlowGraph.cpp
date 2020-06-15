@@ -27,7 +27,7 @@ struct PrintControlFlowGraph : public Pass {
 
   bool modifiesBinaryenIR() override { return false; }
 
-  void printGraphEdges(Expression *lhs, Expression *rhs, bool isDotted) {
+  void printGraphEdges(Expression *lhs, Expression *rhs, int style) {
     // If new node, print out unique node count and label
     if (lhs->nodeCounter == -1) {
       lhs->nodeCounter = nodeCounter++;
@@ -49,7 +49,16 @@ struct PrintControlFlowGraph : public Pass {
       prefix.clear();
     }
     cout << lhs->nodeCounter << " -> " << rhs->nodeCounter;
-    if (isDotted) cout << " [style=dotted]";
+    switch (style) {
+      case 1:
+        cout << " [style=dotted]"; // for child of stack expressions
+        break;
+      case 2:
+        cout << " [color = green, label = \"condition\"]"; // for branching conditions
+        break;
+      default:
+        break;
+    }
     cout << ";\n";
     checkBreakExpression(lhs);
     checkBreakExpression(rhs);
@@ -61,7 +70,7 @@ struct PrintControlFlowGraph : public Pass {
     string key = funcName;
     key.append(breakExp->name.str);
     int labelNode = labelMap.at(key);
-    cout << "\t" << e->nodeCounter << " -> " << labelNode << ";\n";
+    cout << "\t" << e->nodeCounter << " -> " << labelNode << "; // debug break\n";
   }
 
   void traverseExpression(Expression* e) {
@@ -75,7 +84,7 @@ struct PrintControlFlowGraph : public Pass {
             for (int i=0; i<size-1; i++) {
               Expression *lhs = static_cast<Block*>(e)->list[i];
               Expression *rhs = static_cast<Block*>(e)->list[i+1];
-              printGraphEdges(lhs, rhs, false);
+              printGraphEdges(lhs, rhs, 0);
             }
             cout << "\t// end of block \n";
             for (int i=0; i<size; i++) {
@@ -91,8 +100,11 @@ struct PrintControlFlowGraph : public Pass {
             break;
           }
           case Expression::Id::BreakId: {
-            // TODO break conditional expression
-            // Break* breakExp = static_cast<Break*>(e);
+            Break* breakExp = static_cast<Break*>(e);
+            if (breakExp->condition == NULL) return;
+            printGraphEdges(breakExp, breakExp->condition, 2);
+            traverseExpression(breakExp->condition);
+            break;
           }
           case Expression::Id::SwitchId: {
             // TODO
@@ -103,7 +115,7 @@ struct PrintControlFlowGraph : public Pass {
             int size = call->operands.size();
             for (int i=0; i<size; i++) {
               Expression *rhs = call->operands[i];
-              printGraphEdges(e, rhs, true);
+              printGraphEdges(e, rhs, 1);
               traverseExpression(rhs);
             }
             break;
@@ -115,20 +127,20 @@ struct PrintControlFlowGraph : public Pass {
             // These instructions get or set the values of variables, respectively. 
             // The 𝗅𝗈𝖼𝖺𝗅.𝗍𝖾𝖾 instruction is like 𝗅𝗈𝖼𝖺𝗅.𝗌𝖾𝗍 but also returns its argument.
             LocalSet* ls = static_cast<LocalSet*>(e);
-            printGraphEdges(e, ls->value, true);
+            printGraphEdges(e, ls->value, 1);
             traverseExpression(ls->value);
             break;
           }
           case Expression::Id::LoadId: {
             Load *load = static_cast<Load*>(e);
-            printGraphEdges(e, load->ptr, true);
+            printGraphEdges(e, load->ptr, 1);
             traverseExpression(load->ptr);
             break;
           }
           case Expression::Id::StoreId: {
             Store *s = static_cast<Store*>(e);
-            printGraphEdges(e, s->ptr, true);
-            printGraphEdges(e, s->value, true);
+            printGraphEdges(e, s->ptr, 1);
+            printGraphEdges(e, s->value, 1);
             traverseExpression(s->ptr);
             traverseExpression(s->value);
             break;
@@ -139,14 +151,14 @@ struct PrintControlFlowGraph : public Pass {
           case Expression::Id::BinaryId: { // 16
             Expression *left = static_cast<Binary*>(e)->left;
             Expression *right = static_cast<Binary*>(e)->right;
-            printGraphEdges(e, left, true);
-            printGraphEdges(e, right, true);
+            printGraphEdges(e, left, 1);
+            printGraphEdges(e, right, 1);
             traverseExpression(left);
             traverseExpression(right);
             break;
             }
           case Expression::Id::DropId: {
-            printGraphEdges(e, static_cast<Drop*>(e)->value, true);
+            printGraphEdges(e, static_cast<Drop*>(e)->value, 1);
             traverseExpression(static_cast<Drop*>(e)->value);
             break;
           }
@@ -177,6 +189,11 @@ struct PrintControlFlowGraph : public Pass {
             Break* breakExp = static_cast<Break*>(e);
             // Branch instructions come in several flavors: 
             // 𝖻𝗋 performs an unconditional branch, 𝖻𝗋_𝗂𝖿 performs a conditional branch
+            if (breakExp->condition != NULL) {
+              cout << "conditional_";
+            } else {
+              cout << "unconditional_";
+            }
             cout << "break_to_" << breakExp->name;
             break;
             // label id
