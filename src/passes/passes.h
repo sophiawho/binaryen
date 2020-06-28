@@ -120,6 +120,7 @@ Pass* createTrapModeClamp();
 Pass* createTrapModeJS();
 Pass* createUnteePass();
 Pass* createVacuumPass();
+Pass* runVisitorPattern();
 
 } // namespace wasm
 

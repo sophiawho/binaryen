@@ -1,6 +1,5 @@
 //
-// Prints the statements in .dot format. You can use http://www.graphviz.org/ to
-// view .dot files.
+// Visits the expressions in the IR to conduct dataflow analysis.
 //
 
 #include <iomanip>
@@ -17,7 +16,10 @@ using namespace std;
 
 namespace wasm {
 
-struct PrintControlFlowGraph : public Pass {
+struct VisitorPattern : public Pass {
+
+  int stmtCounter = 0;
+  // map<int, Statement> statementMap;
 
   int nodeCounter = 1;
   bool hasPrefix = false;
@@ -85,15 +87,14 @@ struct PrintControlFlowGraph : public Pass {
               prefix.append(to_string(e->nodeCounter));
             }
             int size = static_cast<Block*>(e)->list.size();
+            for (int i=0; i<size; i++) {
+              Expression *curr = static_cast<Block*>(e)->list[i];
+              traverseExpression(curr);
+            }
             for (int i=0; i<size-1; i++) {
               Expression *lhs = static_cast<Block*>(e)->list[i];
               Expression *rhs = static_cast<Block*>(e)->list[i+1];
               printGraphEdges(lhs, rhs, 0);
-            }
-            cout << "\t// end of block \n";
-            for (int i=0; i<size; i++) {
-              Expression *curr = static_cast<Block*>(e)->list[i];
-              traverseExpression(curr);
             }
             break;
           }
@@ -224,7 +225,7 @@ struct PrintControlFlowGraph : public Pass {
             } else {
               cout << "local_tee";
             }
-            cout << "_idx_" << static_cast<LocalSet*>(e)->index;
+            cout << "_idx_" << static_cast<LocalSet*>(e)->index; // TODO MOVE TO PRINT CTRL FLOW GRAPH
             break;
           }
           case Expression::Id::LoadId: {
@@ -286,6 +287,6 @@ struct PrintControlFlowGraph : public Pass {
   }
 };
 
-Pass* createPrintControlFlowGraph() { return new PrintControlFlowGraph(); }
+Pass* runVisitorPattern() { return new VisitorPattern(); }
 
 } // namespace wasm

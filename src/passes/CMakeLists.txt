@@ -77,6 +77,7 @@ set(passes_SOURCES
   SSAify.cpp
   Untee.cpp
   Vacuum.cpp
+  VisitorPattern.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/WasmIntrinsics.cpp
 )
 add_library(passes OBJECT ${passes_SOURCES})
