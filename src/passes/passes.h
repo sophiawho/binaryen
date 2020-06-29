@@ -82,7 +82,7 @@ Pass* createPrecomputePass();
 Pass* createPrecomputePropagatePass();
 Pass* createPrinterPass();
 Pass* createPrintCallGraphPass();
-Pass *createPrintControlFlowGraph();
+Pass* createPrintControlFlowGraph();
 Pass* createPrintFeaturesPass();
 Pass* createPrintFunctionMapPass();
 Pass* createPrintStackIRPass();

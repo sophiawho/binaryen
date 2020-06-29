@@ -582,6 +582,7 @@ public:
   }
 
   int nodeCounter = -1; // Unique nodes in .dot graph
+  std::vector<int> localrdefs;
 };
 
 const char* getExpressionName(Expression* curr);

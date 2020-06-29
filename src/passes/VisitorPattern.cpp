@@ -18,9 +18,7 @@ namespace wasm {
 
 struct VisitorPattern : public Pass {
 
-  int stmtCounter = 0;
-  // map<int, Statement> statementMap;
-
+  // Helper for printing out graph nodes
   int nodeCounter = 1;
   bool hasPrefix = false;
   string prefix = "";
@@ -28,21 +26,137 @@ struct VisitorPattern : public Pass {
   map<string, int> labelMap;
   set<int> printedBreakNodes;
 
+  // Helper for reaching defs
+  map<int, Expression*> statementMap;
+  
   bool modifiesBinaryenIR() override { return false; }
+
+  void newNodeRDef(Expression *e) {
+      if (e->_id == Expression::Id::LocalSetId) {
+        cout << "\ndebug: local set id reached " << e->nodeCounter << "\n";
+        LocalSet* ls = static_cast<LocalSet*>(e);
+        // Check if there are statements to kill
+        int localVar = ls->index;
+        std::vector<int>::iterator iter = e->localrdefs.begin();
+        while (iter != e->localrdefs.end()) {
+            Expression *curExp = statementMap.at(*iter);
+            int curVar = static_cast<LocalSet*>(curExp)->index;
+            if (curVar == localVar) {
+                iter = e->localrdefs.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+        // Add to localrdefs
+        e->localrdefs.push_back(e->nodeCounter);
+    }
+  }
+
+  void analyseRDefs(Expression *e) {
+      newNodeRDef(e);
+      switch (e->_id) {
+        case Expression::Id::BlockId: {
+            int size = static_cast<Block*>(e)->list.size();
+            for (int i=0; i<size; i++) {
+                Expression *curr = static_cast<Block*>(e)->list[i];
+                analyseRDefs(curr);
+            }
+            break;
+        }
+        case Expression::Id::LoopId: {
+            Loop* loop = static_cast<Loop*>(e);
+            analyseRDefs(loop->body);
+            break;
+          }
+          case Expression::Id::BreakId: {
+            Break* breakExp = static_cast<Break*>(e);
+            if (breakExp->condition == NULL) return;
+            analyseRDefs(breakExp->condition);
+            break;
+          }
+          case Expression::Id::SwitchId: {
+            // TODO
+            break;
+          }
+          case Expression::Id::CallId: { // call printf
+            Call* call = static_cast<Call*>(e);
+            int size = call->operands.size();
+            for (int i=0; i<size; i++) {
+              Expression *rhs = call->operands[i];
+              analyseRDefs(rhs);
+            }
+            break;
+          }
+          case Expression::Id::LocalGetId: {
+            break;
+          }
+          case Expression::Id::LocalSetId: {
+            // These instructions get or set the values of variables, respectively. 
+            // The 𝗅𝗈𝖼𝖺𝗅.𝗍𝖾𝖾 instruction is like 𝗅𝗈𝖼𝖺𝗅.𝗌𝖾𝗍 but also returns its argument.
+            LocalSet* ls = static_cast<LocalSet*>(e);
+            analyseRDefs(ls->value);
+            break;
+          }
+          case Expression::Id::LoadId: {
+            Load *load = static_cast<Load*>(e);
+            analyseRDefs(load->ptr);
+            break;
+          }
+          case Expression::Id::StoreId: {
+            Store *s = static_cast<Store*>(e);
+            analyseRDefs(s->ptr);
+            analyseRDefs(s->value);
+            break;
+          }
+          case Expression::Id::ConstId: { // 14
+            break;
+          }
+          case Expression::Id::BinaryId: { // 16
+            Expression *left = static_cast<Binary*>(e)->left;   
+            Expression *right = static_cast<Binary*>(e)->right;
+            analyseRDefs(left);
+            analyseRDefs(right);
+            break;
+            }
+          case Expression::Id::DropId: {
+            analyseRDefs(static_cast<Drop*>(e)->value);
+            break;
+          }
+          default: 
+            break;
+        }
+      }
+
+  void visitModule(Module* module) {
+    cout << "\n\n REACHING DEFINITION ANALYSIS \n\n";
+    for (auto& curr : module->functions) {
+        cout << "\n\t// begin function " << funcName << ";\n";
+        // Visit expression
+        if (!curr->body) {
+            continue;
+        }
+        analyseRDefs(curr->body);
+    }
+  }
+
+  // Code from PrintControlFlowGraph.cpp
+
+  // If first time encountering node, print out label
+  void newNode(Expression *e){
+    e->nodeCounter = nodeCounter++;
+    cout << "\t" << e->nodeCounter << " [label = ";
+    printExpression(e);
+    cout << "];\n";
+    statementMap.insert(pair<int, wasm::Expression*>(e->nodeCounter, e));
+  }
 
   void printGraphEdges(Expression *lhs, Expression *rhs, int style) {
     // If new node, print out unique node count and label
     if (lhs->nodeCounter == -1) {
-      lhs->nodeCounter = nodeCounter++;
-      cout << "\t" << lhs->nodeCounter << " [label = ";
-      printExpression(lhs);
-      cout << "];\n";
+      newNode(lhs);
     } 
     if (rhs->nodeCounter == -1) {
-      rhs->nodeCounter = nodeCounter++;
-      cout << "\t" << rhs->nodeCounter << " [label = ";
-      printExpression(rhs);
-      cout << "];\n";
+      newNode(rhs);
     }
     // Print out graph edge
     cout << "\t";
@@ -87,14 +201,15 @@ struct VisitorPattern : public Pass {
               prefix.append(to_string(e->nodeCounter));
             }
             int size = static_cast<Block*>(e)->list.size();
-            for (int i=0; i<size; i++) {
-              Expression *curr = static_cast<Block*>(e)->list[i];
-              traverseExpression(curr);
-            }
             for (int i=0; i<size-1; i++) {
               Expression *lhs = static_cast<Block*>(e)->list[i];
               Expression *rhs = static_cast<Block*>(e)->list[i+1];
               printGraphEdges(lhs, rhs, 0);
+            }
+            cout << "\t// end of block \n";
+            for (int i=0; i<size; i++) {
+              Expression *curr = static_cast<Block*>(e)->list[i];
+              traverseExpression(curr);
             }
             break;
           }
@@ -173,7 +288,7 @@ struct VisitorPattern : public Pass {
   }
 
   void printExpression(Expression* e) {
-    cout << "\"";
+    cout << "\"" << e->nodeCounter << ": ";
     switch (e->_id) {
           case Expression::Id::BlockId: { // 1
             break;
@@ -284,6 +399,8 @@ struct VisitorPattern : public Pass {
     }
 
     o << "}\n";
+
+    visitModule(module);
   }
 };
 
