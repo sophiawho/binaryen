@@ -33,7 +33,6 @@ struct VisitorPattern : public Pass {
 
   void newNodeRDef(Expression *e) {
       if (e->_id == Expression::Id::LocalSetId) {
-        cout << "\ndebug: local set id reached " << e->nodeCounter << "\n";
         LocalSet* ls = static_cast<LocalSet*>(e);
         // Check if there are statements to kill
         int localVar = ls->index;
@@ -50,6 +49,17 @@ struct VisitorPattern : public Pass {
         // Add to localrdefs
         e->localrdefs.push_back(e->nodeCounter);
     }
+    // Print out reaching definitions
+    if (e->localrdefs.empty()) return;
+    cout << e->nodeCounter << ": <";
+    for (std::vector<int>::const_iterator i = e->localrdefs.begin(); i != e->localrdefs.end(); ++i) {
+        if (i+1 == e->localrdefs.end()) {
+            std::cout << *i;
+        } else {
+            std::cout << *i << ',';
+        }
+    }
+    cout << ">\n";
   }
 
   void analyseRDefs(Expression *e) {
@@ -128,9 +138,12 @@ struct VisitorPattern : public Pass {
       }
 
   void visitModule(Module* module) {
-    cout << "\n\n REACHING DEFINITION ANALYSIS \n\n";
+    cout << "\n\n================Reaching Definition Analysis=======================\n";
     for (auto& curr : module->functions) {
-        cout << "\n\t// begin function " << funcName << ";\n";
+        funcName.clear();
+        funcName += "\"function_";
+        funcName += curr->name.str;
+        cout << "\nFunction " << funcName << "\":\n";
         // Visit expression
         if (!curr->body) {
             continue;
