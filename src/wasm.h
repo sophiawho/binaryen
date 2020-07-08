@@ -204,7 +204,7 @@ enum UnaryOp {
 
 enum BinaryOp {
   // int or float
-  AddInt32,
+  AddInt32, // 0
   SubInt32,
   MulInt32,
 
@@ -227,17 +227,17 @@ enum BinaryOp {
   EqInt32,
   NeInt32,
   // int
-  LtSInt32,
+  LtSInt32, // 17
   LtUInt32,
   LeSInt32,
   LeUInt32,
-  GtSInt32,
+  GtSInt32, // 21
   GtUInt32,
   GeSInt32,
   GeUInt32,
 
   // int or float
-  AddInt64,
+  AddInt64, // 25
   SubInt64,
   MulInt64,
 
@@ -582,7 +582,7 @@ public:
   }
 
   int nodeCounter = -1; // Unique nodes in .dot graph
-  std::vector<int> localrdefs;
+  std::set<int> localrdefs;
 };
 
 const char* getExpressionName(Expression* curr);

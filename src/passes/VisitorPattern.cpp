@@ -27,16 +27,35 @@ struct VisitorPattern : public Pass {
   set<int> printedBreakNodes;
 
   // Helper for reaching defs 
+  // Maps expression node counter to expression to identify the local variable set
   map<int, Expression*> statementMap;
   
   bool modifiesBinaryenIR() override { return false; }
 
-  void newNodeRDef(Expression *e) {
+  void printReachingDefs(){
+    for (const auto &pair : statementMap) {
+        Expression* e = pair.second;
+        if (e->localrdefs.empty() || e->_id == Expression::Id::ConstId) continue;
+        cout << e->nodeCounter << ": <";
+        // Convert elements of local reaching defs set to vector for printing
+        std::vector<int> v(e->localrdefs.begin(), e->localrdefs.end());
+        for (std::vector<int>::const_iterator i = v.begin(); i != v.end(); ++i) {
+          if (i+1 == v.end()) {
+              std::cout << *i;
+          } else {
+              std::cout << *i << ',';
+          }
+        }
+        cout << ">\n";
+    }
+  }
+
+  void addReachingDef(Expression *e) { // TODO (Sophia): RENAME to addReachingDefinition
       if (e->_id == Expression::Id::LocalSetId) {
         LocalSet* ls = static_cast<LocalSet*>(e);
         // Check if there are statements to kill
         int localVar = ls->index;
-        std::vector<int>::iterator iter = e->localrdefs.begin();
+        std::set<int>::iterator iter = e->localrdefs.begin();
         while (iter != e->localrdefs.end()) {
             Expression *curExp = statementMap.at(*iter);
             int curVar = static_cast<LocalSet*>(curExp)->index;
@@ -46,41 +65,50 @@ struct VisitorPattern : public Pass {
                 ++iter;
             }
         }
-        // Add to localrdefs
-        e->localrdefs.push_back(e->nodeCounter);
+        // Add current expression to localrdefs
+        e->localrdefs.emplace(e->nodeCounter);
     }
-    // Print out reaching definitions
-    if (e->localrdefs.empty()) return;
-    cout << e->nodeCounter << ": <";
-    for (std::vector<int>::const_iterator i = e->localrdefs.begin(); i != e->localrdefs.end(); ++i) {
-        if (i+1 == e->localrdefs.end()) {
-            std::cout << *i;
-        } else {
-            std::cout << *i << ',';
-        }
+  }
+
+  void propagateRDefs(Expression *pred, Expression *e) {
+    // Union pred expression's reaching definitions with current expression's reaching definitions
+    e->localrdefs.insert(std::begin(pred->localrdefs), std::end(pred->localrdefs));
+    // If current expression is a LocalSet, add reaching definition
+    if (e->_id == Expression::Id::LocalSetId) {
+      addReachingDef(e);
     }
-    cout << ">\n";
   }
 
   void analyseRDefs(Expression *e) {
-      newNodeRDef(e);
+      // TODO (Sophia) Delete
+      // If encountering a new node, print out reaching definitions
+      addReachingDef(e);
+      // Recursively call analyseRDefs
       switch (e->_id) {
         case Expression::Id::BlockId: {
             int size = static_cast<Block*>(e)->list.size();
-            for (int i=0; i<size; i++) {
-                Expression *curr = static_cast<Block*>(e)->list[i];
-                analyseRDefs(curr);
+            for (int i=0; i<size-1; i++) {
+              Expression *lhs = static_cast<Block*>(e)->list[i];
+              Expression *rhs = static_cast<Block*>(e)->list[i+1];
+              if (i == 0) {
+                propagateRDefs(e, lhs);
+              }
+              analyseRDefs(lhs);
+              propagateRDefs(lhs, rhs);
+              analyseRDefs(rhs);
             }
             break;
         }
         case Expression::Id::LoopId: {
             Loop* loop = static_cast<Loop*>(e);
+            propagateRDefs(e, loop->body);
             analyseRDefs(loop->body);
             break;
           }
           case Expression::Id::BreakId: {
             Break* breakExp = static_cast<Break*>(e);
             if (breakExp->condition == NULL) return;
+            propagateRDefs(e, breakExp->condition);
             analyseRDefs(breakExp->condition);
             break;
           }
@@ -124,6 +152,8 @@ struct VisitorPattern : public Pass {
           case Expression::Id::BinaryId: { // 16
             Expression *left = static_cast<Binary*>(e)->left;   
             Expression *right = static_cast<Binary*>(e)->right;
+            propagateRDefs(e, left);
+            propagateRDefs(e, right);
             analyseRDefs(left);
             analyseRDefs(right);
             break;
@@ -137,6 +167,7 @@ struct VisitorPattern : public Pass {
         }
       }
 
+  // Entry to reaching definition analysis
   void visitModule(Module* module) {
     cout << "\n\n================Reaching Definition Analysis=======================\n";
     for (auto& curr : module->functions) {
@@ -148,8 +179,10 @@ struct VisitorPattern : public Pass {
         if (!curr->body) {
             continue;
         }
+        // Analyse reaching definitions for each function
         analyseRDefs(curr->body);
     }
+    printReachingDefs();
   }
 
   // Code from PrintControlFlowGraph.cpp
