@@ -172,9 +172,14 @@ struct PrintControlFlowGraph : public Pass {
   }
 
   void printExpression(Expression* e) {
-    cout << "\"";
+    cout << "\"" << e->nodeCounter << ": ";
     switch (e->_id) {
           case Expression::Id::BlockId: { // 1
+            Block* block = static_cast<Block*>(e);
+            cout << "block_" << block->name;
+            string key = funcName;
+            key.append(block->name.str);
+            labelMap.insert(pair<string, int>(key, e->nodeCounter));
             break;
           }
           case Expression::Id::IfId: {
