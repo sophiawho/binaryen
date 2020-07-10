@@ -35,18 +35,26 @@ struct VisitorPattern : public Pass {
   void printReachingDefs(){
     for (const auto &pair : statementMap) {
         Expression* e = pair.second;
+        int node = e->nodeCounter;
+        if (e->_id == Expression::Id::LocalSetId) {
+          // 	1 [color=lightsteelblue1, style=filled];
+          std::cout << "\t" << node << " [color=lightsteelblue1, style=filled];\n";
+        }
         if (e->localrdefs.empty() || e->_id == Expression::Id::ConstId) continue;
-        cout << e->nodeCounter << ": <";
+        // b [label="Main label", xlabel="Additional caption"];
         // Convert elements of local reaching defs set to vector for printing
         std::vector<int> v(e->localrdefs.begin(), e->localrdefs.end());
+        std::cout << "\t" << node << " [xlabel=\"r_defs: ";
         for (std::vector<int>::const_iterator i = v.begin(); i != v.end(); ++i) {
-          if (i+1 == v.end()) {
-              std::cout << *i;
-          } else {
-              std::cout << *i << ',';
-          }
+          Expression *localSetExpression = statementMap.at(*i);
+          LocalSet* ls = static_cast<LocalSet*>(localSetExpression);
+          int localVar = ls->index;
+          std::cout << *i << "[" << localVar << "]";
+          if (i+1 != v.end()) {
+              std::cout << ", ";
+          } 
         }
-        cout << ">\n";
+        cout << "\"];\n";
     }
   }
 
@@ -187,13 +195,13 @@ struct VisitorPattern : public Pass {
 
   // Entry to reaching definition analysis
   void visitModule(Module* module) {
-    cout << "\n\n================Reaching Definition Analysis=======================\n";
+    cout << "\n\n\t// ================Reaching Definition Analysis=======================\n";
     for (auto& curr : module->functions) {
         funcName.clear();
         funcName += "\"function_";
         funcName += curr->name.str;
         funcName += "\"";
-        cout << "\nFunction " << funcName << ":\n";
+        cout << "\t// " << funcName << ":\n";
         // Visit expression
         if (!curr->body) {
             continue;
@@ -468,9 +476,8 @@ struct VisitorPattern : public Pass {
         traverseExpression(curr->body);
     }
 
-    o << "}\n";
-
     visitModule(module);
+    o << "}\n";
   }
 };
 
