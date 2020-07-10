@@ -110,6 +110,22 @@ struct VisitorPattern : public Pass {
             if (breakExp->condition == NULL) return;
             propagateRDefs(e, breakExp->condition);
             analyseRDefs(breakExp->condition);
+            propagateRDefs(breakExp->condition, e); // Recursive
+            // Loop convergence
+            string key = funcName;
+            key.append(breakExp->name.str);
+            int loopNode = labelMap.at(key);
+            if (loopNode == e->nodeCounter) {
+              break;
+            } else {
+              Expression* loopExp = statementMap.at(loopNode);
+              int prevSize = loopExp->localrdefs.size();
+              propagateRDefs(e, loopExp);
+              int curSize = loopExp->localrdefs.size();
+              if (curSize > prevSize) {
+                analyseRDefs(loopExp);
+              }
+            }
             break;
           }
           case Expression::Id::SwitchId: {
@@ -156,6 +172,8 @@ struct VisitorPattern : public Pass {
             propagateRDefs(e, right);
             analyseRDefs(left);
             analyseRDefs(right);
+            propagateRDefs(left, e); // Recursive
+            propagateRDefs(right, e); // Recursive
             break;
             }
           case Expression::Id::DropId: {
@@ -174,7 +192,8 @@ struct VisitorPattern : public Pass {
         funcName.clear();
         funcName += "\"function_";
         funcName += curr->name.str;
-        cout << "\nFunction " << funcName << "\":\n";
+        funcName += "\"";
+        cout << "\nFunction " << funcName << ":\n";
         // Visit expression
         if (!curr->body) {
             continue;
