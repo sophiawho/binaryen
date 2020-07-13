@@ -350,6 +350,18 @@ struct VisitorPattern : public Pass {
             traverseExpression(right);
             break;
             }
+          case Expression::Id::SelectId: { // 17
+            Expression *ifTrue = static_cast<Select*>(e)->ifTrue;
+            Expression *ifFalse = static_cast<Select*>(e)->ifFalse;
+            Expression *condition = static_cast<Select*>(e)->condition;
+            printGraphEdges(e, ifTrue, 0);
+            printGraphEdges(e, ifFalse, 0);
+            printGraphEdges(e, condition, 2);
+            traverseExpression(condition);
+            traverseExpression(ifTrue);
+            traverseExpression(ifFalse);
+            break;
+          }
           case Expression::Id::DropId: {
             printGraphEdges(e, static_cast<Drop*>(e)->value, 1);
             traverseExpression(static_cast<Drop*>(e)->value);
@@ -446,6 +458,10 @@ struct VisitorPattern : public Pass {
             cout << "binop_" << op; // 0 = add, 1 = sub
             break;
             }
+          case Expression::Id::SelectId: { // 17 
+            cout << "select";
+            break;
+          }
           case Expression::Id::DropId: {
             cout << "drop";
             break;
