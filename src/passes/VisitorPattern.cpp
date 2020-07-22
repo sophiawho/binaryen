@@ -166,8 +166,13 @@ struct VisitorPattern : public Pass {
           }
           case Expression::Id::StoreId: {
             Store *s = static_cast<Store*>(e);
+            propagateRDefs(e, s->ptr);
+            propagateRDefs(e, s->value);
             analyseRDefs(s->ptr);
             analyseRDefs(s->value);
+            // Recursive
+            propagateRDefs(s->ptr, e);
+            propagateRDefs(s->value, e);
             break;
           }
           case Expression::Id::ConstId: { // 14
@@ -183,7 +188,17 @@ struct VisitorPattern : public Pass {
             propagateRDefs(left, e); // Recursive
             propagateRDefs(right, e); // Recursive
             break;
-            }
+          }
+          case Expression::Id::SelectId: {
+            Expression *ifTrue = static_cast<Select*>(e)->ifTrue;
+            Expression *ifFalse = static_cast<Select*>(e)->ifFalse;
+            Expression *condition = static_cast<Select*>(e)->condition;
+            propagateRDefs(e, condition);
+            analyseRDefs(condition);
+            propagateRDefs(condition, e);
+            propagateRDefs(e, ifTrue);
+            propagateRDefs(e, ifFalse);
+          }
           case Expression::Id::DropId: {
             analyseRDefs(static_cast<Drop*>(e)->value);
             break;
